@@ -14,7 +14,7 @@ def main() -> None:
     best = population[0]
     level = decode_chromosome(best.chromosome, cfg)
 
-    output_dir = Path("output/a8")
+    output_dir = Path("output/pcg")
     output_dir.mkdir(parents=True, exist_ok=True)
     render_ascii(level, output_dir / "best_level.txt")
 
