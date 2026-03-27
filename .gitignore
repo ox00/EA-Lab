@@ -1,3 +1,6 @@
 .DS_Store
 .idea/
 *.crdownload
+__pycache__/
+*.pyc
+output/
