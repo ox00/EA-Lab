@@ -5,6 +5,26 @@ Define an executable and auditable workflow for MVP delivery.
 
 This workflow is binding for the baseline implementation phase.
 
+## Execution Entry
+Baseline run command:
+
+```bash
+scripts/run-mvp.sh
+```
+
+Optional parameterized run example:
+
+```bash
+scripts/run-mvp.sh --generations 20 --population-size 40 --seed 11 --output-dir output/pcg/mvp_seed11
+```
+
+Required baseline artifacts under output directory:
+
+1. `best_level.txt`
+2. `config.json`
+3. `logs.json`
+4. `summary.json`
+
 ## Phase 0: Interface Freeze
 Entry criteria:
 

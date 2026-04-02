@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from dataclasses import asdict
 from dataclasses import dataclass
 from typing import Iterable, List
 
@@ -101,3 +102,7 @@ def run_minimal_ea(cfg: MarioConfig) -> tuple[List[Individual], List[GenerationL
         population = select_survivors(list(population) + offspring, cfg)
 
     return population, logs
+
+
+def logs_as_dicts(logs: Iterable[GenerationLog]) -> list[dict[str, float | int | None]]:
+    return [asdict(log) for log in logs]
