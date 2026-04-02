@@ -1,7 +1,7 @@
 # Mario Evaluation Specification (EN)
 
 ## Purpose
-This document defines the evaluation contract for the Mario-like A8 project.
+This document defines the evaluation contract for the Mario-like A8 MVP baseline.
 
 It is intended to keep the following aligned:
 - level generation
@@ -9,7 +9,7 @@ It is intended to keep the following aligned:
 - EA / MOEA optimisation
 - report and presentation wording
 
-The evaluation pipeline is:
+The required evaluation pipeline is:
 
 ```text
 chromosome
@@ -27,7 +27,7 @@ This specification covers four evaluation dimensions:
 - `structural diversity`
 - `emptiness`
 
-In the first project version:
+In MVP:
 - `feasibility` is treated as a hard constraint
 - the other three are soft objectives
 
@@ -35,10 +35,10 @@ In the first project version:
 ### Role
 Feasibility is a hard constraint.
 
-Business meaning:
-- a level that cannot be meaningfully played should not survive, even if it looks diverse or visually clean
+Operational meaning:
+- infeasible levels are not valid output candidates
 
-### First-version feasibility rules
+### MVP feasibility rules
 The constraint checker should return whether the level is valid under at least these rules:
 
 1. Start area exists and is safe.
@@ -64,7 +64,7 @@ Recommended format:
 ```
 
 ### Violation handling
-Recommended policy:
+Required policy:
 - `feasible-first`
 
 Interpretation:
@@ -78,10 +78,10 @@ Difficulty is not treated as "the harder the better".
 Instead, optimisation should target:
 - closeness to a predefined target difficulty level
 
-Business meaning:
-- the team can generate levels for a chosen audience profile such as easy, medium, or hard
+Operational meaning:
+- levels are optimized toward a target difficulty band
 
-### Recommended proxy design
+### Proxy design
 Difficulty should not depend on enemy count alone.
 
 A first proxy should combine:
@@ -111,20 +111,16 @@ difficulty_error = abs(difficulty_score - target_difficulty)
 - minimise `difficulty_error`
 
 ### Notes
-This makes the metric usable for:
-- adaptive content generation
-- controlled benchmark generation
-- report-ready interpretation
+Difficulty proxy changes require protocol version update.
 
 ## 3. Structural Diversity
 ### Role
 Structural diversity measures how much internal variation a level contains.
 
-Business meaning:
-- prevents levels from becoming repetitive, flat, or visually monotonous
-- promotes content variety for player experience
+Operational meaning:
+- penalizes repetitive structure patterns
 
-### Recommended first-version signals
+### MVP signals
 Use one or a combination of:
 - segment repetition penalty
 - row diversity
@@ -132,7 +128,7 @@ Use one or a combination of:
 - unique segment ratio
 - repeated motif penalty
 
-### Suggested first implementation
+### Suggested implementation
 For a segment-sequence genotype, a practical first metric is:
 
 ```text
@@ -149,15 +145,14 @@ Where:
 - maximise `structural_diversity`
 
 ### Notes
-This is a proxy for variation, not a full model of user fun.
+This metric is a structural proxy only.
 
 ## 4. Emptiness
 ### Role
 Emptiness measures how open or cluttered the level is.
 
-Business meaning:
-- controls visual simplicity
-- helps avoid overly dense or overly empty layouts
+Operational meaning:
+- controls layout openness versus density
 
 ### Definition
 A first simple version:
@@ -167,7 +162,7 @@ emptiness = number_of_empty_tiles / total_tiles
 ```
 
 ### Objective direction
-Two options are valid:
+Supported modes:
 
 1. Maximise `emptiness`
 - if the design goal is cleaner and more open levels
@@ -175,16 +170,15 @@ Two options are valid:
 2. Match a target emptiness range
 - if the design goal is balanced density rather than maximum openness
 
-Recommended first version for coursework:
+Recommended MVP mode:
 - optimise toward a target range, or
 - explicitly state whether you maximise openness or balance it
 
 ### Notes
-Do not present emptiness as a direct difficulty metric.
-It is a structural style proxy.
+Do not use emptiness as direct difficulty substitute.
 
-## 5. Recommended Objective Set
-### First project version
+## 5. Objective Set
+### MVP set
 Recommended objective tuple:
 
 ```text
@@ -198,16 +192,8 @@ Recommended objective tuple:
 Under:
 - feasibility as hard constraint
 
-### Why this set is good
-It balances:
-- controllability
-- structural variety
-- visual simplicity
-
-And it is:
-- easy to compute
-- easy to explain in the report
-- aligned with the lecture direction for MOO-PCG
+Rationale:
+- controllability, variation, and layout density are covered with computable proxies
 
 ## 6. Evaluation API Contract
 Recommended evaluator output:
@@ -221,7 +207,7 @@ Recommended evaluator output:
 }
 ```
 
-The constraint checker should be called before objective use.
+Constraint checker must run before objective use.
 
 Suggested pipeline:
 
@@ -235,14 +221,14 @@ else:
     objectives = None
 ```
 
-## 7. Reporting Guidance
-When writing the report or presentation:
+## 7. Reporting Constraints
+For report and presentation:
 
 1. Clearly separate:
 - hard constraints
 - soft objectives
 
-2. Explain business meaning for every metric.
+2. Explain operational interpretation for every metric.
 
 3. Avoid claiming:
 - "diversity = fun"
@@ -256,7 +242,7 @@ Instead say:
 - representative generated levels
 
 ## 8. Versioning Rule
-If any of the following changes, the team should treat it as an evaluation version change:
+If any item below changes, evaluation protocol version must increment:
 
 1. tile vocabulary
 2. feasibility rules
@@ -264,5 +250,4 @@ If any of the following changes, the team should treat it as an evaluation versi
 4. diversity formula
 5. emptiness target or direction
 
-Reason:
-- otherwise experiments before and after the change are not directly comparable
+Otherwise, cross-version experiment comparison is invalid.

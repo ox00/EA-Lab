@@ -1,181 +1,100 @@
-# A8 选题分析与课题模板（Procedural Content Generation, PCG）
+# A8 Project Baseline Specification
 
-## 1. 业务背景（具体到可落地场景）
-A8 的核心是用 AI 自动生成内容（关卡、地图、规则、素材），在降低生产成本的同时提高内容更新速度和个性化能力。典型应用不仅限于游戏，也包括教育仿真、训练场景与数字孪生内容生成。
+## Project Position
+This project adopts a two-stage implementation policy:
 
-典型可落地场景：
+1. `MVP baseline` (current mandatory scope): explicit Mario encoding + EA/MOEA search.
+2. `AI extension` (optional later scope): AI-based generator or repair module integrated into the same pipeline.
 
-1. 游戏关卡与地图自动生成
-- 场景：平台跳跃、策略地图、解谜关卡持续更新。
-- 诉求：在保证可玩性的前提下提升新鲜感与产能。
+The baseline is the acceptance anchor. AI extension is enhancement scope.
 
-2. 个性化内容推荐与生成
-- 场景：按玩家水平生成难度匹配关卡。
-- 诉求：提升留存、减少流失，支持分层运营。
+## Mandatory Scope (MVP)
+The MVP must implement:
 
-3. 教育与训练仿真场景生成
-- 场景：应急演练、教学训练、机器人仿真任务环境。
-- 诉求：低成本生成大量可控任务实例。
+1. Genotype definition.
+2. Deterministic decoding from genotype to level phenotype.
+3. Feasibility check as hard constraints.
+4. Multi-objective evaluation.
+5. EA/MOEA search loop.
+6. Rendered outputs for inspection and reporting.
 
-核心点：PCG 的价值不只在“能生成”，而在“生成结果可玩、可控、可持续迭代”。
+The minimum executable chain is:
 
-## 2. 业务价值（可量化）
-1. 内容生产效率价值
-- 缩短内容制作周期，减少关卡策划/美术重复劳动。
-- 以更低边际成本持续供给新内容。
+`chromosome -> decode -> check_constraints -> evaluate -> select`
 
-2. 用户增长与留存价值
-- 通过难度自适应和多样化内容提升参与度。
-- 降低内容消耗过快导致的留存衰减。
+## Encoding and Search Space
+The active baseline encoding is:
 
-3. 平台化能力价值
-- 形成“生成-评估-筛选”自动化流水线。
-- 支撑 UGC/AIGC 协同生产模式。
+- `segment sequence encoding`
 
-可落地量化目标示例：
-- 内容生成效率提升 3-10 倍（同人力投入下）。
-- 有效可玩内容占比提升 20%-50%。
-- 用户会话时长或关卡完成率提升 5%-15%。
-- 内容审核/筛选人工成本下降 20% 以上。
+Design constraints:
 
-## 3. 关键难点（项目风险点）
-1. 可玩性定义与评估难
-- “好关卡”难用单一指标描述，需要自动指标 + 人工评估结合。
+1. Single game domain: Mario-like 2D tile level.
+2. Fixed map height and fixed segment width.
+3. Stable segment ID library.
+4. Stable tile vocabulary with fixed semantics.
 
-2. 多样性与质量冲突
-- 追求多样性可能破坏可玩性；追求稳定性易模式坍缩。
+This encoding is the collaboration interface between generation and EA modules.
 
-3. 可控生成难
-- 指定难度/主题/长度时，模型控制精度可能不稳定。
+## Constraint Policy
+Feasibility is treated as hard constraints in MVP.
 
-4. 训练数据与表示难
-- 关卡表示方式（tile/token/graph）影响生成质量。
-- 数据规模不足时泛化能力受限。
+A level is invalid if any required constraint is violated.  
+Invalid levels are not treated as successful outputs regardless of objective values.
 
-5. 评测设计不严谨风险
-- 仅展示样例图而缺少系统评估，结论说服力不足。
+Required constraints are defined in:
 
-## 4. 落地需要的主要资源
-1. 数据资源
-- 公开关卡数据集（如 Mario levels）或程序生成数据。
-- 必要标签：可通关性、难度等级、主题特征（若做条件生成）。
-- 若采用课堂案例同类路线，可只选单一游戏域，并把源关卡切成 segment/template 库，而不是一开始追求跨游戏大数据。
+- `MARIO_EA_INTERFACE.md`
+- `MARIO_EVALUATION_SPEC_EN.md`
 
-2. 工具与技术栈
-- 生成模型：GAN/VAE/Transformer（按任务复杂度选择）。
-- 优化方法：进化算法/多目标优化用于后筛选或联合优化。
-- 评估工具：可玩性检测器、轨迹求解器、统计分析脚本。
+## Objective Policy
+MVP objective set:
 
-3. 算力资源
-- 最小可行：CPU + 小模型验证。
-- 推荐：1 张 GPU 进行稳定训练与参数搜索。
-- 大规模生成评估可用多进程并行。
+1. `difficulty_error` (minimize)
+2. `structural_diversity` (maximize)
+3. `emptiness` or `density-balance` (project configuration)
 
-4. 人力与分工（4人组建议）
-- 1 人：数据处理与关卡表示。
-- 1 人：生成模型训练与调参。
-- 1 人：自动评估与用户评测设计。
-- 1 人：可视化、报告与复现实验打包。
+These objectives are structural proxies and must be interpreted as such in reporting.
 
-5. 工程保障资源
-- 生成质量门控（可通关/规则合法性过滤）。
-- 版本化实验配置与种子管理。
-- 样本库管理（生成结果分级存档）。
+## Roles and Interfaces
+Role separation:
 
-## 5. 课题模板（可直接选）
-### 模板 A8-T1：可控 Mario 关卡生成（难度条件）
-1. 问题定义
-- 输入：目标难度等级与结构约束。
-- 输出：满足约束的可通关关卡。
-- 目标：提高可通关率，同时保持多样性与难度匹配。
+1. Generation side: segment library, decode, render, constraint helpers.
+2. EA side: population generation, crossover, mutation, feasible-first handling, selection.
 
-2. 数据与基线
-- 数据：公开 Mario 关卡数据 + 数据增强。
-- 基线：随机生成、模板规则法、基础 GAN/VAE。
+Minimum shared API:
 
-3. 评价指标
-- 可玩性：可通关率、通关路径复杂度。
-- 控制性：目标难度偏差。
-- 多样性：结构差异指标/重复率。
-- 质量：人工主观评分（可选）。
+```python
+decode(chromosome: list[int]) -> Level
+check_constraints(level: Level) -> dict
+evaluate(level: Level) -> dict
+render(level: Level, path: str) -> None
+```
 
-4. 预期产出
-- 难度可控的生成样例库。
-- “难度控制 vs 可玩性”折中曲线。
+## Deliverables for MVP Milestone
+MVP milestone is complete when all items below are delivered:
 
-### 模板 A8-T2：多目标 PCG（可玩性-多样性-复杂度）
-1. 问题定义
-- 输入：生成器参数或潜在向量。
-- 输出：候选内容集。
-- 目标：联合优化可玩性、多样性与生成复杂度。
+1. Reproducible run command with fixed seed.
+2. Constraint report for generated levels.
+3. Objective values per generation.
+4. Representative feasible levels in rendered form.
+5. Short technical note of parameter settings.
 
-2. 数据与基线
-- 数据：标准关卡集或自定义场景集。
-- 基线：单目标生成器、手工规则生成器。
+## Non-Goals for MVP
+The following are intentionally excluded from MVP acceptance:
 
-3. 评价指标
-- 多目标指标：HV、IGD（若采用 MOO 框架）。
-- 业务指标：可用内容比例、生成耗时、人工筛选成本。
+1. Cross-game generalization.
+2. Human-in-the-loop content preference optimization.
+3. Complex AI generator training.
+4. Full production-grade game engine integration.
 
-4. 预期产出
-- Pareto 内容集合与选取策略。
-- 不同业务偏好下的推荐生成方案。
+## Change Control Rule
+Any change in the following items requires a version bump in evaluation protocol:
 
-### 模板 A8-T3：个性化 PCG（玩家分层适配）
-1. 问题定义
-- 输入：玩家能力标签/历史行为特征。
-- 输出：匹配玩家水平的关卡内容。
-- 目标：提升完成率与体验评分，降低过难/过易比例。
+1. Tile vocabulary.
+2. Segment library schema.
+3. Constraint definitions.
+4. Objective formulas.
+5. Difficulty proxy formula.
 
-2. 数据与基线
-- 数据：玩家行为日志（可用仿真代理数据）。
-- 基线：统一难度生成、固定分层规则。
-
-3. 评价指标
-- 用户指标：完成率、重试次数、停留时长。
-- 匹配指标：难度命中率、体验评分（问卷/代理指标）。
-
-4. 预期产出
-- 分层用户的内容匹配策略。
-- 个性化生成收益分析报告。
-
-## 6. 课程内实施建议（按 case study 节奏）
-1. 第一阶段（first report）
-- 锁定一个明确目标：可控生成或多目标生成二选一。
-- 定义可玩性自动评估协议（必须可复现）。
-- baseline 至少包含规则法 + 1 个学习法。
-- 若按 lecture 9 的 MOO-PCG 案例推进，优先改成 `显式染色体编码 + 多目标 EA`，把生成模型作为可选扩展而不是主干。
-
-2. 第二阶段（final report 前）
-- 增加消融实验：无控制条件、无筛选模块、不同模型结构。
-- 进行小规模人工评估（如 10-20 样本盲评）。
-- 输出可视化样例与失败案例分类分析。
-
-## 7. 风险与规避
-1. 风险：展示效果好但缺少量化证据。
-- 规避：建立自动评估指标并报告统计结果。
-
-2. 风险：可玩性检测不可靠。
-- 规避：使用代理求解器 + 人工抽检双重校验。
-
-3. 风险：模型训练不稳定。
-- 规避：先跑小模型与小数据闭环，再扩展。
-
-4. 风险：课程周期内难以完成端到端系统。
-- 规避：聚焦单一内容类型（如 2D 关卡）并限制功能范围。
-
-## 8. 课程适配评分（用于 Pipeline 比较）
-评分标准：1-5 分，5 分最好。
-
-1. 实施难度：3/5（评测设计与生成稳定性有挑战）
-2. 数据可得性：4/5（公开数据可用，标签质量需处理）
-3. 算力友好度：3/5（可小规模 CPU 验证，完整实验建议 GPU）
-4. 创新空间：5/5（可控生成、多目标与个性化方向丰富）
-5. 报告与答辩展示性：5/5（可视化成果非常强）
-6. 课程周期可控性：3/5（需严格控范围）
-7. 综合推荐度：4.0/5（创意与展示强，执行需方法化）
-
-## 9. 结论（选题定位）
-A8 是“展示力强、创意空间大”的中等挑战选题。若团队希望答辩中有直观成果（可视化关卡/地图）并能体现方法创新，A8 很有竞争力；建议优先选择“可控生成”或“多目标生成”其中一个主线，确保评估协议完整可复现。
-
-补充：结合 lecture 9 的 Sokoban 多目标关卡生成案例，A8 更推荐走 `显式关卡编码 + MOEA` 路线。这样更贴课程主线，也更容易解释 genotype/phenotype、目标函数和 Pareto 解集。
+This rule prevents mixed and non-comparable experiment results.

@@ -1,21 +1,26 @@
-# Mario EA 对接接口说明（CN）
+# Mario EA 接口规范（CN）
 
-本文件是 [MARIO_EA_INTERFACE.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE.md) 的中文归档版，供中文讨论、对齐和后续修改使用。
+## 文档定位
+本文件是 A8 MVP 阶段的中文约束摘要。
 
-当前建议：
-- 继续把 [MARIO_EA_INTERFACE.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE.md) 作为日常阅读版
-- 把本文件作为中文冻结副本
-- 把英文版作为 report / presentation / technical appendix 的正式素材来源
+权威接口定义以：
+- [MARIO_EA_INTERFACE.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE.md)
+- [MARIO_EA_INTERFACE_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE_EN.md)
 
-## 当前冻结结论
-1. 游戏域：`Mario-like`
-2. 编码方式：`segment sequence encoding`
-3. 搜索对象：`genotype`
-4. 评价对象：`phenotype`
-5. 可玩性：优先作为 `hard constraint`
-6. 第一版目标：`difficulty matching`、`structural diversity`、`emptiness`
+为准。
 
-## 最核心接口
+## MVP 核心约束
+1. 仅做 `Mario-like` 单域。
+2. 基因型采用 `segment ID sequence`。
+3. 可玩性采用硬约束。
+4. 目标函数采用三项：
+`difficulty_error`、`structural_diversity`、`emptiness`。
+5. 先完成 MVP，再评估 AI 扩展模块。
+
+## 强制流程
+`chromosome -> decode -> phenotype -> check_constraints -> evaluate -> selection`
+
+## 最小 API
 ```python
 decode(chromosome: list[int]) -> Level
 check_constraints(level: Level) -> dict
@@ -23,14 +28,15 @@ evaluate(level: Level) -> dict
 render(level: Level, path: str) -> None
 ```
 
-## 最重要的团队共识
-1. EA 不直接优化画风，而是优化关卡结构。
-2. 同一个 genotype 可以渲染成不同视觉风格，但逻辑关卡不变。
-3. 先把 `chromosome -> decode -> check -> evaluate` 跑通，再谈复杂模型。
-4. 如果接口没冻结，后面算法和生成模块都会反复返工。
+## 必须冻结项
+1. 地图常量（高度、segment 宽度、segment 数量）
+2. tile vocabulary
+3. segment library 结构
+4. 约束规则
+5. 目标公式
+6. API 输出键
 
-## 使用建议
-如果你们需要快速开会对齐：
-- 先看 [MARIO_ALIGNMENT_ONE_PAGER.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_ALIGNMENT_ONE_PAGER.md)
-- 再看 [MARIO_EA_INTERFACE.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE.md)
-- 英文输出时参考 [MARIO_EA_INTERFACE_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE_EN.md)
+## 变更规则
+上述冻结项任一变动，必须：
+1. 提升协议版本
+2. 分离新旧实验结果

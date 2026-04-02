@@ -1,148 +1,55 @@
-# Mario EA Interface (EN)
+# Mario EA Interface Specification (EN)
 
-## Purpose
-This document defines the shared interface between:
-- the `level generation / decoding / rendering` side
-- the `EA / MOEA optimisation` side
+## Document Role
+This document defines the formal collaboration contract for A8 MVP.
 
-Its purpose is to freeze the representation early so both teammates can work in parallel without redesigning the encoding later.
+It governs:
+- level generation / decoding module
+- EA or MOEA optimization module
+- evaluation and reporting consistency
 
-## Core Idea
-The EA does not directly optimise the final visual style.
+## Baseline Policy
+MVP policy is fixed as:
 
-The EA optimises:
-- a searchable `genotype`
+1. Explicit Mario segment encoding.
+2. Hard feasibility constraints.
+3. Multi-objective EA optimization.
 
-The genotype is decoded into:
-- a logical Mario level, i.e. the `phenotype`
+AI-based generation is out of MVP scope and can be added only as a later extension.
 
-Then the phenotype is:
-- checked by hard constraints
-- evaluated by multiple objectives
-- optionally rendered for demo and presentation
-
-Pipeline:
-
+## Mandatory Pipeline
 ```text
-genotype
--> decode
--> phenotype
--> hard constraint check
--> multi-objective evaluation
--> EA selection / crossover / mutation
--> rendered output
+chromosome -> decode -> phenotype -> check_constraints -> evaluate -> selection
 ```
 
-## Recommended Encoding
-For the course project, the recommended first version is:
-- `segment sequence encoding`
+## Representation Contract
+### Genotype
+MVP genotype format:
+- fixed-length sequence of integer segment IDs
 
-Do not start from:
-- full free-form tile mutation over the whole map
-- a heavy generative model as the project foundation
-
-Reason:
-- smaller and cleaner search space
-- easier mutation and crossover
-- easier feasibility control
-- easier explanation in the report
-
-## Genotype
-The genotype is the chromosome searched by the EA.
-
-Example:
-```text
-[0, 5, 1, 4, 8, 7, 2, 0]
-```
-
-Each integer is a `segment ID`.
-
-Business meaning:
-- the level is composed of ordered reusable local structures
-- each gene selects one segment for one position
-
-## Phenotype
-The phenotype is the decoded logical level map.
-
-Example:
-```text
-16 x 112 tile grid
-```
-
-This representation is used by:
-- constraint checking
+### Phenotype
+Decoded tile grid used for:
+- feasibility validation
 - objective evaluation
-- optional rendering
-
-## Rendered Level
-The rendered level is the visual presentation of the phenotype.
-
-Important distinction:
-- the EA optimises structure
-- the renderer visualises that structure
-
-So the same phenotype may have different visual skins without changing the actual level logic.
-
-## Segment Library Example
-Suggested segment examples:
-
-```text
-S0 = flat ground
-S1 = small gap
-S2 = stair up
-S3 = stair down
-S4 = flat ground with enemy
-S5 = elevated platform
-S6 = question block zone
-S7 = pipe obstacle
-S8 = wide safe ground
-S9 = dense obstacle zone
-```
-
-Example chromosome:
-
-```text
-[S0, S5, S1, S4, S8, S7, S2, S0]
-```
-
-Numerical form:
-
-```text
-[0, 5, 1, 4, 8, 7, 2, 0]
-```
-
-## Decoder
-The decoder concatenates the selected segments from left to right.
-
-Example:
-
-```text
-decode([0, 5, 1, 4, 8, 7, 2, 0]) -> 16 x 112 tile map
-```
-
-That tile map is the phenotype.
-
-## Tile Vocabulary
-Suggested simplified tile vocabulary:
-- `0` = empty
-- `1` = solid ground
-- `2` = breakable brick
-- `3` = question block
-- `4` = coin
-- `5` = enemy
-- `6` = pipe
-- `7` = start marker
-- `8` = goal marker
-
-This vocabulary should be frozen early, because any later change affects:
-- decoding
 - rendering
-- feasibility rules
-- objective evaluation
 
-## Shared API
-The two teammates should agree on the following functions:
+### Rendering
+Rendering is presentation output only.
+It must not alter logical level structure.
 
+## Frozen Configuration
+The following values are frozen per protocol version:
+
+1. `map_height`
+2. `segment_width`
+3. `num_segments`
+4. tile vocabulary and semantics
+5. segment library schema
+
+Derived:
+- `map_width = segment_width * num_segments`
+
+## API Contract
 ```python
 decode(chromosome: list[int]) -> Level
 check_constraints(level: Level) -> dict
@@ -150,141 +57,68 @@ evaluate(level: Level) -> dict
 render(level: Level, path: str) -> None
 ```
 
-Suggested output format:
-
+### Required constraint keys
 ```python
-check_constraints(level) = {
-    "is_feasible": True,
-    "start_ok": True,
-    "goal_ok": True,
-    "reachable": True,
-    "illegal_overlap": False,
-}
-
-evaluate(level) = {
-    "difficulty_error": 0.18,
-    "structural_diversity": 0.74,
-    "emptiness": 0.41,
+{
+  "is_feasible": bool,
+  "start_ok": bool,
+  "goal_ok": bool,
+  "reachable": bool,
+  "illegal_overlap": bool,
+  "max_gap_ok": bool
 }
 ```
 
-## Hard Constraints
-Hard constraints mean immediate rejection.
-
-A level should not enter the valid solution set if it violates them, even if it looks interesting.
-
-Suggested first-version constraints:
-1. The start area must be safe and walkable.
-2. The goal area must exist.
-3. The goal must be reachable.
-4. Gap width must not exceed the jump capability threshold.
-5. No illegal tile overlap is allowed.
-6. Pipes, blocks, and enemies must respect placement rules.
-
-## Objectives
-Recommended first version:
-1. `difficulty matching`
-2. `structural diversity`
-3. `emptiness` or `density balance`
-
-Interpretation:
-- `difficulty matching`: how close the level is to the target difficulty
-- `structural diversity`: how much structural variation the level contains
-- `emptiness`: how open or cluttered the level feels
-
-Recommended formulation:
-- feasibility as hard constraint
-- the 2 or 3 objectives above as soft optimisation targets
-
-## Difficulty Proxy
-Difficulty should not be defined only by enemy count.
-
-A better first proxy may combine:
-- enemy density
-- average gap width
-- height variation
-- required jump count
-- narrow landing count
-
-Example:
-
-```text
-difficulty_score =
-0.35 * normalized_enemy_density +
-0.30 * normalized_gap_risk +
-0.20 * normalized_height_variation +
-0.15 * normalized_jump_count
+### Required evaluation keys
+```python
+{
+  "difficulty_score": float,
+  "difficulty_error": float,
+  "structural_diversity": float,
+  "emptiness": float
+}
 ```
 
-Then the optimisation target is:
-- `difficulty_error = abs(difficulty_score - target_difficulty)`
+## Feasibility Policy
+Feasibility is a hard gate in MVP.
 
-## EA Operators
-### Mutation
-Recommended first version:
-- randomly choose one chromosome position
-- replace the segment ID with another valid segment ID
+Rules:
+1. Infeasible candidates cannot be accepted final outputs.
+2. Survivor logic must prioritize feasible candidates.
 
-Example:
+## Objective Policy
+MVP objective tuple:
 
-```text
-[0, 5, 1, 4, 8, 7, 2, 0]
--> mutate position 3
--> [0, 5, 1, 9, 8, 7, 2, 0]
-```
+1. minimize `difficulty_error`
+2. maximize `structural_diversity`
+3. maximize or target-balance `emptiness` (configured mode)
 
-### Crossover
-Recommended first version:
-- one-point crossover
-- or two-point crossover
+Formal metric definitions are governed by:
+- [MARIO_EVALUATION_SPEC_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md)
 
-Example:
-
-```text
-parent A = [0, 5, 1, 4, 8, 7, 2, 0]
-parent B = [8, 8, 3, 2, 6, 1, 4, 5]
-
-child    = [0, 5, 1, 2, 6, 1, 4, 5]
-```
-
-## What Must Be Frozen Now
-1. Game domain: `Mario-like`
-2. Map height
-3. Segment width
-4. Number of segments per level
-5. Tile vocabulary
-6. Genotype format: `segment ID sequence`
-7. Segment library construction rule
-8. Decoder behaviour
-9. Hard constraints
-10. Objective definitions
-11. Difficulty proxy
-12. Evaluator output schema
-
-## Team Split
-### EA side
-- chromosome design review
-- mutation / crossover
-- selection / ranking
-- MOEA loop
-- experiment logging
-
+## Responsibility Split
 ### Generation side
-- segment library
-- decoder
-- renderer
-- constraint support
-- phenotype-level metric helpers
+1. Segment library management
+2. Decode implementation
+3. Render implementation
+4. Tile semantic consistency
 
-## Final Recommendation
-Before implementing a full MOEA, both sides should first make this chain stable:
+### EA side
+1. Population initialization
+2. Mutation and crossover
+3. Feasible-first handling
+4. Optimization loop and logs
 
-```text
-chromosome
--> decode
--> level
--> check_constraints
--> evaluate
-```
+## Acceptance Conditions
+Interface acceptance requires:
 
-If this chain is stable, the optimisation side and the generation side can proceed independently.
+1. stable API signatures
+2. successful end-to-end run
+3. complete required output keys
+4. deterministic behavior under fixed seed
+
+## Change Control
+Any change to frozen configuration, constraints, objectives, or output schema requires:
+
+1. protocol version increment
+2. explicit split of experimental result sets by version

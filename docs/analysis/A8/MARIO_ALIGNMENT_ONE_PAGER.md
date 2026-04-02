@@ -1,98 +1,69 @@
-# Mario 核心对齐说明（1页）
+# Mario Alignment One Pager
 
-## 这张 1 页纸是干什么的
-用于：
-- 开会快速对齐
-- 开工前确认
-- 中途复检有没有跑偏
+## Baseline Decision
+Project baseline is fixed as:
 
-## 一句话版本
-我们这次做的是：
+`Mario-like PCG with explicit segment genotype + hard feasibility constraints + multi-objective EA`
 
-- `Mario-like level generation with explicit genotype + hard constraints + multi-objective EA`
+AI-based generation is extension scope after MVP acceptance.
 
-不是：
-- 先做大模型，再临时接 EA
+## Pipeline Contract
+Mandatory execution chain:
 
-## 我们的统一流程
 ```text
-chromosome
--> decode
--> level phenotype
--> hard constraint check
--> objective evaluation
--> MOEA
--> render
+chromosome -> decode -> phenotype -> check_constraints -> evaluate -> selection
 ```
 
-## 现在已经推荐定下来的事情
-1. 游戏域：`Mario-like`
-2. 编码方式：`segment sequence encoding`
-3. 可玩性：先做 `hard constraint`
-4. 第一版目标：`difficulty matching`、`structural diversity`、`emptiness`
-5. 第一版算法：可先用 `NSGA-II`
+## Frozen Items (Required)
+The following items must remain stable during MVP:
 
-## Genotype / Phenotype 对齐
-### Genotype
-- 一串 segment ID
-- 例子：`[0, 5, 1, 4, 8, 7, 2, 0]`
+1. Game domain: Mario-like only.
+2. Genotype format: segment ID sequence.
+3. Map shape constants: height, segment width, segment count.
+4. Tile vocabulary and semantics.
+5. Segment library schema.
+6. Decoder behavior and output format.
+7. Hard constraint definitions.
+8. Objective set and objective direction.
+9. Difficulty proxy formula.
+10. Evaluator output schema.
 
-### Phenotype
-- 解码后得到的一整张 Mario 逻辑地图
-- 例如：`16 x 112` tile grid
+## Role Boundary
+Generation side delivers:
 
-### Render
-- 只是把 phenotype 画出来用于展示
-- 不属于 EA 的核心优化对象
+1. Segment library.
+2. Decode function.
+3. Render function.
+4. Constraint helper logic tied to tile semantics.
 
-## 生成侧必须提供
-1. 固定 tile vocabulary
-2. 固定地图尺寸
-3. 固定 segment 宽度
-4. segment library
-5. `decode()`
-6. `render()`
+EA side delivers:
 
-## EA 侧必须拿到
-1. chromosome 长度
-2. segment ID 合法范围
-3. `check_constraints()`
-4. `evaluate()`
-5. mutation 规则
-6. crossover 规则
+1. Population generation.
+2. Mutation and crossover.
+3. Feasible-first handling.
+4. Ranking and survivor selection.
+5. Generation logs and representative outputs.
 
-## 必须冻结的 12 项
-1. 游戏域
-2. 地图高度
-3. segment 宽度
-4. 每关 segment 数量
-5. tile vocabulary
-6. genotype 格式
-7. segment 库构造规则
-8. decoder 行为
-9. hard constraints
-10. objective definitions
-11. difficulty proxy
-12. evaluator 输出格式
+## MVP Acceptance Criteria
+MVP is accepted only if all conditions below are met:
 
-## 现在最容易出问题的点
-1. 还没定接口就开始各写各的
-2. tile 语义频繁变化
-3. difficulty 定义太模糊
-4. 不可行解处理方式没说清楚
-5. 目标太多导致解释困难
+1. Reproducible run with fixed seed.
+2. At least one feasible level produced and rendered.
+3. Constraint report available per evaluated level.
+4. Objective values recorded per generation.
+5. End-to-end chain runs without manual intervention.
 
-## 本周最小交付
-1. 手写一个 chromosome
-2. 能 `decode`
-3. 能 `check_constraints`
-4. 能 `evaluate`
-5. 能 `render`
+## Immediate Risk Triggers
+If any trigger appears, stop and re-align before new coding:
 
-只要这 5 步通了，项目就真正进入可执行状态。
+1. Tile meaning changed without version update.
+2. Decoder output format changed.
+3. Constraint logic changed silently.
+4. Objective formulas changed without protocol note.
+5. Team members run different evaluation versions.
 
-## 对应详细文档
-- 中文接口版：[MARIO_EA_INTERFACE_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE_CN.md)
-- 英文接口版：[MARIO_EA_INTERFACE_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE_EN.md)
-- 当前工作版：[MARIO_EA_INTERFACE.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE.md)
-- EA 推进版：[MARIO_EA_WORKFLOW.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_WORKFLOW.md)
+## Reference Documents
+1. Interface CN: [MARIO_EA_INTERFACE_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE_CN.md)
+2. Interface EN: [MARIO_EA_INTERFACE_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE_EN.md)
+3. Workflow: [MARIO_EA_WORKFLOW.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EA_WORKFLOW.md)
+4. Evaluation spec: [MARIO_EVALUATION_SPEC_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md)
