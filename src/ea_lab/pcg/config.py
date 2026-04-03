@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from dataclasses import asdict
+from typing import Dict, Union
 
 
 @dataclass(frozen=True)
@@ -19,7 +20,7 @@ class MarioConfig:
     def width(self) -> int:
         return self.segment_width * self.num_segments
 
-    def as_dict(self) -> dict[str, int | float]:
+    def as_dict(self) -> Dict[str, Union[int, float]]:
         data = asdict(self)
         data["width"] = self.width
         return data

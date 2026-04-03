@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
+from typing import List, Optional, Tuple
 
 from .config import MarioConfig
 from .models import ConstraintResult, Level, Tile
@@ -10,7 +11,7 @@ def _is_solid(tile: int) -> bool:
     return tile in {Tile.GROUND, Tile.BRICK, Tile.QUESTION, Tile.PIPE}
 
 
-def _find_tile(level: Level, target: int) -> tuple[int, int] | None:
+def _find_tile(level: Level, target: int) -> Optional[Tuple[int, int]]:
     for row, row_values in enumerate(level.grid):
         for col, value in enumerate(row_values):
             if value == target:
@@ -41,7 +42,55 @@ def _max_ground_gap(level: Level) -> int:
     return max(max_gap, current_gap)
 
 
-def _reachable(level: Level, start: tuple[int, int], goal: tuple[int, int], cfg: MarioConfig) -> bool:
+def _enemy_rules_ok(level: Level) -> bool:
+    height = len(level.grid)
+    width = len(level.grid[0])
+
+    for row in range(height):
+        for col in range(width):
+            if level.grid[row][col] != Tile.ENEMY:
+                continue
+            if row + 1 >= height or not _is_solid(level.grid[row + 1][col]):
+                return False
+    return True
+
+
+def _pipe_rules_ok(level: Level) -> bool:
+    height = len(level.grid)
+    width = len(level.grid[0])
+
+    for row in range(height):
+        for col in range(width):
+            if level.grid[row][col] != Tile.PIPE:
+                continue
+
+            has_left = col - 1 >= 0 and level.grid[row][col - 1] == Tile.PIPE
+            has_right = col + 1 < width and level.grid[row][col + 1] == Tile.PIPE
+            if has_left == has_right:
+                return False
+
+            below = level.grid[row + 1][col] if row + 1 < height else None
+            if below is not None and below not in {Tile.PIPE, Tile.GROUND, Tile.BRICK, Tile.QUESTION}:
+                return False
+
+    return True
+
+
+def _placement_rules_ok(level: Level) -> bool:
+    height = len(level.grid)
+    width = len(level.grid[0])
+
+    for row in range(height):
+        for col in range(width):
+            tile = level.grid[row][col]
+            if tile in {Tile.QUESTION, Tile.BRICK} and row >= height - 2:
+                return False
+            if tile == Tile.COIN and row == height - 1:
+                return False
+    return True
+
+
+def _reachable(level: Level, start: Tuple[int, int], goal: Tuple[int, int], cfg: MarioConfig) -> bool:
     queue = deque([start])
     visited = {start}
 
@@ -75,12 +124,48 @@ def check_constraints(level: Level, cfg: MarioConfig) -> ConstraintResult:
     illegal_overlap = False
     max_gap_ok = _max_ground_gap(level) <= cfg.max_jumpable_gap
     reachable = bool(start_ok and goal_ok and _reachable(level, start, goal, cfg))
+    enemy_rules_ok = _enemy_rules_ok(level)
+    pipe_rules_ok = _pipe_rules_ok(level)
+    placement_rules_ok = _placement_rules_ok(level)
+
+    violations: List[str] = []
+    if not start_ok:
+        violations.append("start")
+    if not goal_ok:
+        violations.append("goal")
+    if not reachable:
+        violations.append("reachable")
+    if illegal_overlap:
+        violations.append("illegal_overlap")
+    if not max_gap_ok:
+        violations.append("max_gap")
+    if not enemy_rules_ok:
+        violations.append("enemy_rules")
+    if not pipe_rules_ok:
+        violations.append("pipe_rules")
+    if not placement_rules_ok:
+        violations.append("placement_rules")
 
     return ConstraintResult(
-        is_feasible=start_ok and goal_ok and reachable and not illegal_overlap and max_gap_ok,
+        is_feasible=all(
+            [
+                start_ok,
+                goal_ok,
+                reachable,
+                not illegal_overlap,
+                max_gap_ok,
+                enemy_rules_ok,
+                pipe_rules_ok,
+                placement_rules_ok,
+            ]
+        ),
         start_ok=start_ok,
         goal_ok=goal_ok,
         reachable=reachable,
         illegal_overlap=illegal_overlap,
         max_gap_ok=max_gap_ok,
+        enemy_rules_ok=enemy_rules_ok,
+        pipe_rules_ok=pipe_rules_ok,
+        placement_rules_ok=placement_rules_ok,
+        violations=violations,
     )

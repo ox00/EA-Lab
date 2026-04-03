@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Dict, List
+from dataclasses import field
+from typing import Dict, List, Optional
 
 LevelGrid = List[List[int]]
 Chromosome = List[int]
@@ -45,6 +46,10 @@ class ConstraintResult:
     reachable: bool
     illegal_overlap: bool
     max_gap_ok: bool
+    enemy_rules_ok: bool = True
+    pipe_rules_ok: bool = True
+    placement_rules_ok: bool = True
+    violations: List[str] = field(default_factory=list)
 
     def as_dict(self) -> Dict[str, bool]:
         return {
@@ -56,14 +61,30 @@ class ConstraintResult:
             "max_gap_ok": self.max_gap_ok,
         }
 
+    @property
+    def violation_count(self) -> int:
+        return len(self.violations)
+
+    def as_log_dict(self) -> Dict[str, object]:
+        data: Dict[str, object] = self.as_dict()
+        data.update(
+            {
+                "enemy_rules_ok": self.enemy_rules_ok,
+                "pipe_rules_ok": self.pipe_rules_ok,
+                "placement_rules_ok": self.placement_rules_ok,
+                "violation_count": self.violation_count,
+                "violations": list(self.violations),
+            }
+        )
+        return data
+
 
 @dataclass
 class Individual:
     chromosome: Chromosome
     constraints: ConstraintResult
-    evaluation: EvaluationResult | None
+    evaluation: Optional[EvaluationResult]
 
     @property
     def feasible(self) -> bool:
         return self.constraints.is_feasible
-

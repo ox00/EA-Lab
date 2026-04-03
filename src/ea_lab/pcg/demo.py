@@ -3,10 +3,14 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Dict, List, Optional, Union
 
 from .config import MarioConfig
 from .decode import decode_chromosome
+from .ea import individual_as_log_dict
 from .ea import logs_as_dicts
+from .ea import population_constraint_report
+from .ea import top_k_feasible_frontier
 from .ea import run_minimal_ea
 from .render import render_ascii
 
@@ -24,6 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--generations", type=int, default=10)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output-dir", type=str, default="output/pcg/mvp")
+    parser.add_argument("--top-k-frontier", type=int, default=5)
     return parser.parse_args()
 
 
@@ -45,10 +50,12 @@ def build_config(args: argparse.Namespace) -> MarioConfig:
 def write_artifacts(
     output_dir: Path,
     cfg: MarioConfig,
-    best_chromosome: list[int],
-    constraints: dict[str, bool],
-    evaluation: dict[str, float] | None,
-    logs: list[dict[str, float | int | None]],
+    best_chromosome: List[int],
+    constraints: Dict[str, object],
+    evaluation: Optional[Dict[str, float]],
+    logs: List[Dict[str, Union[float, int, None, Dict[str, int]]]],
+    constraint_report: Dict[str, object],
+    frontier_levels: List[Dict[str, object]],
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "config.json").write_text(
@@ -59,11 +66,21 @@ def write_artifacts(
         json.dumps(logs, indent=2) + "\n",
         encoding="utf-8",
     )
+    (output_dir / "constraint_report.json").write_text(
+        json.dumps(constraint_report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    (output_dir / "frontier_summary.json").write_text(
+        json.dumps({"top_k": len(frontier_levels), "levels": frontier_levels}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     summary = {
         "best_chromosome": best_chromosome,
         "constraints": constraints,
         "evaluation": evaluation,
         "feasible_generations": sum(1 for log in logs if (log["feasible_ratio"] or 0) > 0),
+        "constraint_report": "constraint_report.json",
+        "frontier_summary": "frontier_summary.json",
     }
     (output_dir / "summary.json").write_text(
         json.dumps(summary, indent=2) + "\n",
@@ -77,23 +94,44 @@ def main() -> None:
     population, logs = run_minimal_ea(cfg)
     best = population[0]
     level = decode_chromosome(best.chromosome, cfg)
+    constraint_report = population_constraint_report(population)
+    frontier = top_k_feasible_frontier(population, args.top_k_frontier)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     render_ascii(level, output_dir / "best_level.txt")
+    frontier_dir = output_dir / "frontier_levels"
+    frontier_dir.mkdir(parents=True, exist_ok=True)
+    frontier_levels: List[Dict[str, object]] = []
+    for rank, individual in enumerate(frontier, start=1):
+        frontier_level = decode_chromosome(individual.chromosome, cfg)
+        file_name = "frontier_{:02d}.txt".format(rank)
+        file_path = frontier_dir / file_name
+        render_ascii(frontier_level, file_path)
+        frontier_levels.append(
+            {
+                "rank": rank,
+                "path": "frontier_levels/{}".format(file_name),
+                "individual": individual_as_log_dict(individual),
+            }
+        )
     write_artifacts(
         output_dir=output_dir,
         cfg=cfg,
         best_chromosome=best.chromosome,
-        constraints=best.constraints.as_dict(),
+        constraints=best.constraints.as_log_dict(),
         evaluation=best.evaluation.as_objectives() if best.evaluation else None,
         logs=logs_as_dicts(logs),
+        constraint_report=constraint_report,
+        frontier_levels=frontier_levels,
     )
 
     print("Output dir:", str(output_dir))
     print("Best chromosome:", best.chromosome)
-    print("Constraints:", best.constraints.as_dict())
+    print("Constraints:", best.constraints.as_log_dict())
     print("Evaluation:", best.evaluation.as_objectives() if best.evaluation else None)
+    print("Constraint report:", json.dumps(individual_as_log_dict(best), indent=2))
+    print("Frontier levels exported:", len(frontier_levels))
     print("Generations:", len(logs))
 
 

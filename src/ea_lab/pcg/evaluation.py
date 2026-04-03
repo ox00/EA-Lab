@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List
+
 from .config import MarioConfig
 from .models import EvaluationResult, Level, Tile
 
@@ -8,7 +10,7 @@ def _count_tiles(level: Level, tile: int) -> int:
     return sum(1 for row in level.grid for value in row if value == tile)
 
 
-def _ground_profile(level: Level) -> list[int]:
+def _ground_profile(level: Level) -> List[int]:
     profile = []
     height = len(level.grid)
     width = len(level.grid[0])
