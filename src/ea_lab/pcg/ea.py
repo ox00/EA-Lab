@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from dataclasses import asdict
 from dataclasses import dataclass
-from typing import Iterable, List
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from .config import MarioConfig
 from .constraints import check_constraints
@@ -41,39 +41,222 @@ def crossover(parent_a: Chromosome, parent_b: Chromosome, cfg: MarioConfig, rng:
     return parent_a[:point] + parent_b[point:]
 
 
-def feasible_first_key(individual: Individual) -> tuple[float, float, float, float]:
-    if not individual.feasible:
-        penalties = sum(
-            0 if value else 1
-            for key, value in individual.constraints.as_dict().items()
-            if key != "is_feasible"
-        )
-        return (1.0, penalties, float("inf"), float("inf"))
+OBJECTIVE_SPECS: Sequence[Tuple[str, bool]] = (
+    ("difficulty_error", True),
+    ("structural_diversity", False),
+    ("emptiness_error", True),
+)
 
-    assert individual.evaluation is not None
+
+def _constraint_violation_counts(population: Iterable[Individual]) -> Dict[str, int]:
+    counts: Dict[str, int] = {}
+    for individual in population:
+        for violation in individual.constraints.violations:
+            counts[violation] = counts.get(violation, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _dominates(individual_a: Individual, individual_b: Individual) -> bool:
+    assert individual_a.evaluation is not None
+    assert individual_b.evaluation is not None
+
+    better_or_equal = True
+    strictly_better = False
+    for objective_name, minimize in OBJECTIVE_SPECS:
+        value_a = getattr(individual_a.evaluation, objective_name)
+        value_b = getattr(individual_b.evaluation, objective_name)
+        if minimize:
+            if value_a > value_b:
+                better_or_equal = False
+                break
+            if value_a < value_b:
+                strictly_better = True
+        else:
+            if value_a < value_b:
+                better_or_equal = False
+                break
+            if value_a > value_b:
+                strictly_better = True
+    return better_or_equal and strictly_better
+
+
+def _fast_non_dominated_sort(population: Sequence[Individual]) -> List[List[int]]:
+    if not population:
+        return []
+
+    domination_counts = [0] * len(population)
+    dominates = [[] for _ in population]
+    fronts: List[List[int]] = [[]]
+
+    for index_a, individual_a in enumerate(population):
+        for index_b, individual_b in enumerate(population):
+            if index_a == index_b:
+                continue
+            if _dominates(individual_a, individual_b):
+                dominates[index_a].append(index_b)
+            elif _dominates(individual_b, individual_a):
+                domination_counts[index_a] += 1
+
+        if domination_counts[index_a] == 0:
+            fronts[0].append(index_a)
+
+    front_index = 0
+    while front_index < len(fronts) and fronts[front_index]:
+        next_front: List[int] = []
+        for index_a in fronts[front_index]:
+            for index_b in dominates[index_a]:
+                domination_counts[index_b] -= 1
+                if domination_counts[index_b] == 0:
+                    next_front.append(index_b)
+        if next_front:
+            fronts.append(next_front)
+        front_index += 1
+
+    return fronts
+
+
+def _crowding_distance(population: Sequence[Individual], front: Sequence[int]) -> Dict[int, float]:
+    if not front:
+        return {}
+    if len(front) <= 2:
+        return {index: float("inf") for index in front}
+
+    distances = {index: 0.0 for index in front}
+    for objective_name, _ in OBJECTIVE_SPECS:
+        ordered = sorted(front, key=lambda idx: getattr(population[idx].evaluation, objective_name))
+        first_index = ordered[0]
+        last_index = ordered[-1]
+        distances[first_index] = float("inf")
+        distances[last_index] = float("inf")
+
+        minimum = getattr(population[first_index].evaluation, objective_name)
+        maximum = getattr(population[last_index].evaluation, objective_name)
+        if maximum == minimum:
+            continue
+
+        for position in range(1, len(ordered) - 1):
+            current_index = ordered[position]
+            if distances[current_index] == float("inf"):
+                continue
+            previous_value = getattr(population[ordered[position - 1]].evaluation, objective_name)
+            next_value = getattr(population[ordered[position + 1]].evaluation, objective_name)
+            distances[current_index] += (next_value - previous_value) / (maximum - minimum)
+
+    return distances
+
+
+def _rank_feasible_population(population: Sequence[Individual]) -> Tuple[List[Individual], int]:
+    fronts = _fast_non_dominated_sort(population)
+    ordered: List[Individual] = []
+    first_front_size = len(fronts[0]) if fronts else 0
+
+    for front in fronts:
+        distances = _crowding_distance(population, front)
+        ordered.extend(population[index] for index in sorted(front, key=lambda idx: distances[idx], reverse=True))
+
+    return ordered, first_front_size
+
+
+def top_k_feasible_frontier(population: Sequence[Individual], top_k: int) -> List[Individual]:
+    feasible = [individual for individual in population if individual.feasible]
+    if not feasible or top_k <= 0:
+        return []
+
+    fronts = _fast_non_dominated_sort(feasible)
+    if not fronts:
+        return []
+
+    first_front = fronts[0]
+    distances = _crowding_distance(feasible, first_front)
+    ordered_indices = sorted(first_front, key=lambda idx: distances[idx], reverse=True)
+    unique_frontier: List[Individual] = []
+    seen = set()
+    for index in ordered_indices:
+        chromosome_key = tuple(feasible[index].chromosome)
+        if chromosome_key in seen:
+            continue
+        seen.add(chromosome_key)
+        unique_frontier.append(feasible[index])
+        if len(unique_frontier) >= top_k:
+            break
+    return unique_frontier
+
+
+def infeasible_key(individual: Individual) -> Tuple[int, int, int]:
+    penalty_flags = individual.constraints.as_dict()
+    unmet_required = sum(0 if value else 1 for key, value in penalty_flags.items() if key != "is_feasible")
     return (
-        0.0,
-        0.0,
-        individual.evaluation.difficulty_error,
-        individual.evaluation.emptiness_error - individual.evaluation.structural_diversity,
+        individual.constraints.violation_count,
+        unmet_required,
+        sum(individual.chromosome),
     )
 
 
 def select_survivors(population: Iterable[Individual], cfg: MarioConfig) -> List[Individual]:
-    return sorted(population, key=feasible_first_key)[: cfg.population_size]
+    candidates = list(population)
+    feasible = [individual for individual in candidates if individual.feasible]
+    infeasible = [individual for individual in candidates if not individual.feasible]
+
+    survivors: List[Individual] = []
+    if feasible:
+        fronts = _fast_non_dominated_sort(feasible)
+        for front in fronts:
+            if len(survivors) + len(front) <= cfg.population_size:
+                ordered_front, _ = _rank_feasible_population([feasible[index] for index in front])
+                survivors.extend(ordered_front)
+                continue
+
+            distances = _crowding_distance(feasible, front)
+            survivors.extend(
+                feasible[index]
+                for index in sorted(front, key=lambda idx: distances[idx], reverse=True)[
+                    : cfg.population_size - len(survivors)
+                ]
+            )
+            break
+
+    if len(survivors) < cfg.population_size:
+        survivors.extend(sorted(infeasible, key=infeasible_key)[: cfg.population_size - len(survivors)])
+
+    return survivors
 
 
 @dataclass
 class GenerationLog:
     generation: int
     feasible_ratio: float
-    best_difficulty_error: float | None
-    best_structural_diversity: float | None
-    best_emptiness_error: float | None
-    best_emptiness: float | None
+    feasible_count: int
+    best_front_size: int
+    best_difficulty_error: Optional[float]
+    best_structural_diversity: Optional[float]
+    best_emptiness_error: Optional[float]
+    best_emptiness: Optional[float]
+    constraint_violation_counts: Dict[str, int]
 
 
-def run_minimal_ea(cfg: MarioConfig) -> tuple[List[Individual], List[GenerationLog]]:
+def _best_feasible_individual(population: Sequence[Individual]) -> Tuple[Optional[Individual], int]:
+    feasible = [individual for individual in population if individual.feasible]
+    if not feasible:
+        return None, 0
+
+    ordered, first_front_size = _rank_feasible_population(feasible)
+    return ordered[0], first_front_size
+
+
+def _metric_extrema(population: Sequence[Individual]) -> Tuple[Optional[float], Optional[float], Optional[float], Optional[float]]:
+    feasible_evaluations = [individual.evaluation for individual in population if individual.evaluation is not None]
+    if not feasible_evaluations:
+        return None, None, None, None
+
+    return (
+        min(evaluation.difficulty_error for evaluation in feasible_evaluations),
+        max(evaluation.structural_diversity for evaluation in feasible_evaluations),
+        min(evaluation.emptiness_error for evaluation in feasible_evaluations),
+        min(feasible_evaluations, key=lambda evaluation: evaluation.emptiness_error).emptiness,
+    )
+
+
+def run_minimal_ea(cfg: MarioConfig) -> Tuple[List[Individual], List[GenerationLog]]:
     rng = random.Random(cfg.seed)
     population = [evaluate_chromosome(random_chromosome(cfg, rng), cfg) for _ in range(cfg.population_size)]
     logs: List[GenerationLog] = []
@@ -81,15 +264,21 @@ def run_minimal_ea(cfg: MarioConfig) -> tuple[List[Individual], List[GenerationL
     for generation in range(cfg.generations):
         feasible = [ind for ind in population if ind.feasible]
         feasible_ratio = len(feasible) / len(population)
-        best_eval = min(feasible, key=lambda ind: ind.evaluation.difficulty_error).evaluation if feasible else None
+        _, best_front_size = _best_feasible_individual(population)
+        best_difficulty_error, best_structural_diversity, best_emptiness_error, best_emptiness = _metric_extrema(
+            population
+        )
         logs.append(
             GenerationLog(
                 generation=generation,
                 feasible_ratio=feasible_ratio,
-                best_difficulty_error=best_eval.difficulty_error if best_eval else None,
-                best_structural_diversity=best_eval.structural_diversity if best_eval else None,
-                best_emptiness_error=best_eval.emptiness_error if best_eval else None,
-                best_emptiness=best_eval.emptiness if best_eval else None,
+                feasible_count=len(feasible),
+                best_front_size=best_front_size,
+                best_difficulty_error=best_difficulty_error,
+                best_structural_diversity=best_structural_diversity,
+                best_emptiness_error=best_emptiness_error,
+                best_emptiness=best_emptiness,
+                constraint_violation_counts=_constraint_violation_counts(population),
             )
         )
 
@@ -106,5 +295,26 @@ def run_minimal_ea(cfg: MarioConfig) -> tuple[List[Individual], List[GenerationL
     return population, logs
 
 
-def logs_as_dicts(logs: Iterable[GenerationLog]) -> list[dict[str, float | int | None]]:
+def individual_as_log_dict(individual: Individual) -> Dict[str, object]:
+    return {
+        "chromosome": list(individual.chromosome),
+        "constraints": individual.constraints.as_log_dict(),
+        "evaluation": individual.evaluation.as_objectives() if individual.evaluation else None,
+    }
+
+
+def population_constraint_report(population: Sequence[Individual]) -> Dict[str, object]:
+    feasible = [individual for individual in population if individual.feasible]
+    best_individual, best_front_size = _best_feasible_individual(population)
+    return {
+        "population_size": len(population),
+        "feasible_count": len(feasible),
+        "best_front_size": best_front_size,
+        "violation_counts": _constraint_violation_counts(population),
+        "individuals": [individual_as_log_dict(individual) for individual in population],
+        "best_individual": individual_as_log_dict(best_individual) if best_individual else None,
+    }
+
+
+def logs_as_dicts(logs: Iterable[GenerationLog]) -> List[Dict[str, Union[float, int, None, Dict[str, int]]]]:
     return [asdict(log) for log in logs]
