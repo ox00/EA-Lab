@@ -43,6 +43,8 @@ The following constants must be fixed before baseline experiments:
 3. `num_segments`
 4. `tile_vocabulary`
 5. `segment_library_schema`
+6. `target_difficulty`
+7. `target_emptiness`
 
 Derived:
 - `map_width = segment_width * num_segments`
@@ -93,6 +95,7 @@ render(level: Level, path: str) -> None
   "difficulty_score": float,
   "difficulty_error": float,
   "structural_diversity": float,
+  "emptiness_error": float,
   "emptiness": float
 }
 ```
@@ -109,7 +112,11 @@ MVP objectives:
 
 1. `difficulty_error` (minimize)
 2. `structural_diversity` (maximize)
-3. `emptiness` or target-balanced density (project configuration)
+3. `emptiness_error` (minimize)
+
+Operational note:
+- `emptiness` remains a descriptive metric
+- optimization targets `emptiness_error = abs(emptiness - target_emptiness)`
 
 Objective semantics are governed by:
 - `MARIO_EVALUATION_SPEC_EN.md`

@@ -45,6 +45,8 @@ The following values are frozen per protocol version:
 3. `num_segments`
 4. tile vocabulary and semantics
 5. segment library schema
+6. `target_difficulty`
+7. `target_emptiness`
 
 Derived:
 - `map_width = segment_width * num_segments`
@@ -72,10 +74,11 @@ render(level: Level, path: str) -> None
 ### Required evaluation keys
 ```python
 {
-  "difficulty_score": float,
-  "difficulty_error": float,
-  "structural_diversity": float,
-  "emptiness": float
+    "difficulty_score": float,
+    "difficulty_error": float,
+    "structural_diversity": float,
+    "emptiness_error": float,
+    "emptiness": float
 }
 ```
 
@@ -91,7 +94,11 @@ MVP objective tuple:
 
 1. minimize `difficulty_error`
 2. maximize `structural_diversity`
-3. maximize or target-balance `emptiness` (configured mode)
+3. minimize `emptiness_error`
+
+Notes:
+- `emptiness` is retained as an observable descriptor
+- `emptiness_error = abs(emptiness - target_emptiness)`
 
 Formal metric definitions are governed by:
 - [MARIO_EVALUATION_SPEC_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md)

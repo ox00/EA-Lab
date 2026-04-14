@@ -25,7 +25,7 @@ This specification covers four evaluation dimensions:
 - `feasibility`
 - `difficulty`
 - `structural diversity`
-- `emptiness`
+- `emptiness balance`
 
 In MVP:
 - `feasibility` is treated as a hard constraint
@@ -161,18 +161,18 @@ A first simple version:
 emptiness = number_of_empty_tiles / total_tiles
 ```
 
+Then define the optimization target:
+
+```text
+emptiness_error = abs(emptiness - target_emptiness)
+```
+
 ### Objective direction
-Supported modes:
-
-1. Maximise `emptiness`
-- if the design goal is cleaner and more open levels
-
-2. Match a target emptiness range
-- if the design goal is balanced density rather than maximum openness
+- minimise `emptiness_error`
 
 Recommended MVP mode:
-- optimise toward a target range, or
-- explicitly state whether you maximise openness or balance it
+- fix `target_emptiness`
+- report both `emptiness` and `emptiness_error`
 
 ### Notes
 Do not use emptiness as direct difficulty substitute.
@@ -185,7 +185,7 @@ Recommended objective tuple:
 (
     minimise difficulty_error,
     maximise structural_diversity,
-    maximise or target-match emptiness
+    minimise emptiness_error
 )
 ```
 
@@ -203,7 +203,8 @@ Recommended evaluator output:
     "difficulty_score": 0.62,
     "difficulty_error": 0.18,
     "structural_diversity": 0.74,
-    "emptiness": 0.41,
+    "emptiness_error": 0.04,
+    "emptiness": 0.41
 }
 ```
 
@@ -249,5 +250,6 @@ If any item below changes, evaluation protocol version must increment:
 3. difficulty proxy formula
 4. diversity formula
 5. emptiness target or direction
+6. emptiness-error formula
 
 Otherwise, cross-version experiment comparison is invalid.

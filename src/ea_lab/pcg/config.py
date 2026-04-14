@@ -9,6 +9,7 @@ class MarioConfig:
     num_segments: int = 8
     max_jumpable_gap: int = 3
     target_difficulty: float = 0.55
+    target_emptiness: float = 0.45
     population_size: int = 20
     crossover_rate: float = 0.9
     mutation_rate: float = 0.2

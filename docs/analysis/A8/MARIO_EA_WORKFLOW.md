@@ -79,7 +79,7 @@ Required scope:
 
 1. Difficulty objective.
 2. Diversity objective.
-3. Emptiness objective.
+3. Emptiness-balance objective.
 4. Feasibility remains hard constraint.
 
 Exit criteria:

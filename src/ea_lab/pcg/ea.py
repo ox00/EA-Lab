@@ -55,7 +55,7 @@ def feasible_first_key(individual: Individual) -> tuple[float, float, float, flo
         0.0,
         0.0,
         individual.evaluation.difficulty_error,
-        -(individual.evaluation.structural_diversity + individual.evaluation.emptiness),
+        individual.evaluation.emptiness_error - individual.evaluation.structural_diversity,
     )
 
 
@@ -69,6 +69,7 @@ class GenerationLog:
     feasible_ratio: float
     best_difficulty_error: float | None
     best_structural_diversity: float | None
+    best_emptiness_error: float | None
     best_emptiness: float | None
 
 
@@ -87,6 +88,7 @@ def run_minimal_ea(cfg: MarioConfig) -> tuple[List[Individual], List[GenerationL
                 feasible_ratio=feasible_ratio,
                 best_difficulty_error=best_eval.difficulty_error if best_eval else None,
                 best_structural_diversity=best_eval.structural_diversity if best_eval else None,
+                best_emptiness_error=best_eval.emptiness_error if best_eval else None,
                 best_emptiness=best_eval.emptiness if best_eval else None,
             )
         )

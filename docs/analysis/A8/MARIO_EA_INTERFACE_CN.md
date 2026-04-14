@@ -14,7 +14,7 @@
 2. 基因型采用 `segment ID sequence`。
 3. 可玩性采用硬约束。
 4. 目标函数采用三项：
-`difficulty_error`、`structural_diversity`、`emptiness`。
+`difficulty_error`、`structural_diversity`、`emptiness_error`。
 5. 先完成 MVP，再评估 AI 扩展模块。
 
 ## 强制流程

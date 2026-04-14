@@ -52,7 +52,7 @@ MVP objective set:
 
 1. `difficulty_error` (minimize)
 2. `structural_diversity` (maximize)
-3. `emptiness` or `density-balance` (project configuration)
+3. `emptiness_error` (minimize toward `target_emptiness`)
 
 These objectives are structural proxies and must be interpreted as such in reporting.
 

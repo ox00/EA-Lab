@@ -45,6 +45,7 @@ def evaluate_level(level: Level, cfg: MarioConfig) -> EvaluationResult:
     enemy_tiles = _count_tiles(level, Tile.ENEMY)
 
     emptiness = empty_tiles / total_tiles
+    emptiness_error = abs(emptiness - cfg.target_emptiness)
     enemy_density = enemy_tiles / max(1, cfg.width)
 
     profile = _ground_profile(level)
@@ -62,11 +63,12 @@ def evaluate_level(level: Level, cfg: MarioConfig) -> EvaluationResult:
         + 0.15 * normalized_jump_count
     )
     difficulty_error = abs(difficulty_score - cfg.target_difficulty)
-    structural_diversity = 0.6 * _row_diversity(level) + 0.4 * (1.0 - abs(emptiness - 0.45))
+    structural_diversity = _row_diversity(level)
 
     return EvaluationResult(
         difficulty_score=difficulty_score,
         difficulty_error=difficulty_error,
         structural_diversity=structural_diversity,
         emptiness=emptiness,
+        emptiness_error=emptiness_error,
     )

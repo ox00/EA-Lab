@@ -28,11 +28,13 @@ class EvaluationResult:
     difficulty_error: float
     structural_diversity: float
     emptiness: float
+    emptiness_error: float
 
     def as_objectives(self) -> Dict[str, float]:
         return {
             "difficulty_error": self.difficulty_error,
             "structural_diversity": self.structural_diversity,
+            "emptiness_error": self.emptiness_error,
             "emptiness": self.emptiness,
         }
 
@@ -66,4 +68,3 @@ class Individual:
     @property
     def feasible(self) -> bool:
         return self.constraints.is_feasible
-
