@@ -120,15 +120,21 @@ def main() -> None:
     frontier_levels: List[Dict[str, object]] = []
     for rank, individual in enumerate(frontier, start=1):
         frontier_level = decode_chromosome(individual.chromosome, cfg)
-        file_name = f"frontier_{rank:02d}.txt"
-        render_ascii(frontier_level, frontier_dir / file_name)
-        frontier_levels.append(
-            {
-                "rank": rank,
-                "path": f"frontier_levels/{file_name}",
-                "individual": individual_as_log_dict(individual),
-            }
-        )
+        ascii_name = f"frontier_{rank:02d}.txt"
+        render_ascii(frontier_level, frontier_dir / ascii_name)
+        record: Dict[str, object] = {
+            "rank": rank,
+            "ascii_path": f"frontier_levels/{ascii_name}",
+            "individual": individual_as_log_dict(individual),
+        }
+        if args.render_backend in ("pygame", "both"):
+            png_name = f"frontier_{rank:02d}.png"
+            try:
+                render_pygame(frontier_level, frontier_dir / png_name, tile_size=args.tile_size)
+                record["png_path"] = f"frontier_levels/{png_name}"
+            except RuntimeError as exc:
+                print(f"Pygame frontier render skipped for rank {rank}:", str(exc))
+        frontier_levels.append(record)
 
     write_artifacts(
         output_dir=output_dir,
