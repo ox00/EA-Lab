@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mario PCG Frontier Browser</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <p class="eyebrow">EA Lab A8</p>
+          <h1>Frontier Browser</h1>
+          <p class="subcopy">
+            Browse representative Mario PCG runs, inspect frontier members, and compare the trade-off metrics behind each generated level.
+          </p>
+        </div>
+        <div id="case-list" class="case-list"></div>
+      </aside>
+
+      <main class="content">
+        <section class="hero-panel">
+          <div>
+            <p id="case-tag" class="eyebrow">Showcase Case</p>
+            <h2 id="case-title">Loading...</h2>
+            <p id="case-summary" class="case-summary"></p>
+          </div>
+          <div class="metrics-grid" id="metric-cards"></div>
+        </section>
+
+        <section class="viewer-grid">
+          <div class="viewer-card">
+            <div class="viewer-header">
+              <h3 id="viewer-title">Best Level</h3>
+              <a id="viewer-json-link" class="inline-link" href="#" target="_blank" rel="noreferrer">Open summary</a>
+            </div>
+            <img id="viewer-image" class="viewer-image" alt="Selected level render" />
+          </div>
+
+          <div class="frontier-card">
+            <div class="viewer-header">
+              <h3>Frontier Members</h3>
+              <p class="microcopy">Click any frontier entry to inspect its render, metrics, and chromosome.</p>
+            </div>
+            <div id="frontier-list" class="frontier-list"></div>
+          </div>
+        </section>
+
+        <section class="detail-panel">
+          <div class="detail-box">
+            <h3>Selected Candidate</h3>
+            <pre id="selected-metrics" class="detail-pre"></pre>
+          </div>
+          <div class="detail-box">
+            <h3>Chromosome</h3>
+            <pre id="selected-chromosome" class="detail-pre"></pre>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./browser_data.js" defer></script>
+    <script src="./app.js" defer></script>
+  </body>
+</html>

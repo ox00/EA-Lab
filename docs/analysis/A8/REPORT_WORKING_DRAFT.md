@@ -262,6 +262,39 @@ Recommended priority:
 2. improve experiment visualization
 3. only then consider more advanced evolutionary operators
 
+### 9.1 V3 Content-Space Direction
+The next content-space iteration is now framed as a structured `V3` upgrade rather than another ad hoc segment expansion.
+
+Core idea:
+1. move from isolated `segment id` thinking to `segment family + variant + difficulty tier`
+2. make the content space more controllable and more explainable
+3. support future objectives such as difficulty-curve control and motif-balance evaluation
+
+Primary design document:
+1. [SEGMENT_LIBRARY_V3_PLAN_2026-04-15_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/SEGMENT_LIBRARY_V3_PLAN_2026-04-15_CN.md)
+
+Interpretation:
+1. V2 solved the problem of being too sparse
+2. V3 is intended to solve the problem of weak semantic structure
+
+### 9.2 Frontier Browser Direction
+To improve presentation quality and make Pareto trade-offs easier to inspect, a static frontier browser has been added.
+
+Role:
+1. compare representative showcase runs in one place
+2. inspect frontier members as concrete level images
+3. connect metrics, constraints, and chromosome structure in a presentation-friendly way
+
+Static browser entry:
+1. [index.html](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/results/frontier-browser/index.html)
+
+Browser data builder:
+1. [build-frontier-browser-data.py](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/scripts/build-frontier-browser-data.py)
+
+Interpretation:
+1. this improves the demonstration layer without changing the core optimizer
+2. it also makes group review easier because the frontier can be inspected visually instead of only through JSON files
+
 ## 10. Artifact Mapping
 Use this rule consistently:
 
