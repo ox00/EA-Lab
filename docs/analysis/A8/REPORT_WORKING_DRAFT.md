@@ -116,6 +116,10 @@ Supporting artifacts:
 1. [PHASE_REVIEW_2026-04-13_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/PHASE_REVIEW_2026-04-13_CN.md)
 2. [compare_summary.json](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/baseline_compare/compare_summary.json)
 
+Baseline compare figure:
+
+![Baseline Compare Metrics](../../../output/pcg/figures/baseline_compare_metrics.png)
+
 ### 6.2 Why Hypervolume Is Used As Evaluation
 Hypervolume is introduced here as a Pareto front quality metric.
 
@@ -189,6 +193,10 @@ Interpretation:
 Supporting artifact:
 1. [scan_summary.json](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/parameter_scan/scan_summary.json)
 
+Parameter scan figure:
+
+![Parameter Scan Heatmaps](../../../output/pcg/figures/parameter_scan_heatmaps.png)
+
 ### 6.5 Showcase Samples
 Two representative `NSGA-II` runs were exported for presentation.
 
@@ -221,6 +229,10 @@ Representative frontier sample:
 Artifact links:
 1. [Case A Summary](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/showcase/pop40_mut0_1_seed7/summary.json)
 2. [Case B Summary](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/showcase/pop20_mut0_3_seed7/summary.json)
+
+Generation-trend figure:
+
+![Showcase Generation Curves](../../../output/pcg/figures/showcase_generation_curves.png)
 
 ## 7. Current Interpretation
 The project now has enough evidence to support the following claims:
