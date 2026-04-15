@@ -95,50 +95,160 @@ Interpretation:
 - these are random seeds for repeated runs
 - they are not seed levels or training data
 
-## 6. Current Findings
-Based on the latest baseline compare:
+## 6. Experimental Results
+This section records the main experimental evidence collected so far.
 
-1. EA achieves lower `difficulty_error`
-2. NSGA-II achieves higher `structural_diversity`
-3. NSGA-II also shows slightly better `emptiness_error`
-4. both algorithms produce feasible best candidates consistently
-5. raw `emptiness` remains high for both, indicating the segment library is still structurally sparse
+### 6.1 V1 Baseline Compare
+The first reproducible compare was run with a sparse segment library and fixed random seeds.
 
-Current interpretation:
-1. EA is better for single-region convergence
-2. NSGA-II is better for preserving trade-off solution sets
-3. the current content library, not only the optimizer, limits density balance
+Main result:
+1. `EA` achieved lower `difficulty_error`
+2. `NSGA-II` achieved better `structural_diversity`
+3. both kept `best_feasible_ratio = 1.0`
+4. raw `emptiness` stayed around `0.84 - 0.86`
 
-## 7. Why Hypervolume Is Added As Evaluation, Not Selection
-Hypervolume is introduced as a front-quality metric in this stage.
+Interpretation:
+1. the optimization pipeline itself was working
+2. the content space was still too sparse
+3. algorithm comparison was valid, but the search space was limiting output quality
+
+Supporting artifacts:
+1. [PHASE_REVIEW_2026-04-13_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/PHASE_REVIEW_2026-04-13_CN.md)
+2. [compare_summary.json](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/baseline_compare/compare_summary.json)
+
+### 6.2 Why Hypervolume Is Used As Evaluation
+Hypervolume is introduced here as a Pareto front quality metric.
 
 Reason:
-1. it is useful for evaluating Pareto front quality
-2. it strengthens algorithm comparison evidence
-3. it does not require replacing the baseline search algorithm definition
+1. it is useful for comparing front quality between runs
+2. it strengthens the evidence for multi-objective behavior
+3. it does not force the project to abandon standard `NSGA-II`
 
-Not adopted as survivor selection yet because:
-1. standard NSGA-II is a cleaner course baseline
-2. hypervolume-contribution selection changes the algorithm family
-3. that path is closer to SMS-EMOA than vanilla NSGA-II
+It is not used as survivor selection yet because:
+1. standard `NSGA-II` remains the cleaner course baseline
+2. hypervolume-contribution selection would change the algorithm family
+3. that path is closer to `SMS-EMOA` than vanilla `NSGA-II`
+
+### 6.3 V2 Content-Space Upgrade
+After the V1 experiments, the main bottleneck was identified as the segment library rather than the optimizer alone.
+
+The library was expanded from `10` segments to `18` segments by adding denser terrain, mixed obstacle segments, richer reward layouts, and more pipe/enemy combinations.
+
+Before V2:
+1. `avg_empty_ratio = 0.8504`
+2. `9 / 10` segments had `empty_ratio > 0.80`
+
+After V2:
+1. `avg_empty_ratio = 0.8095`
+2. `10 / 18` segments had `empty_ratio > 0.80`
+3. enemy-bearing segments increased from `2` to `5`
+4. pipe-bearing segments increased from `1` to `3`
+5. question-bearing segments increased from `2` to `6`
+
+Interpretation:
+1. the search space became materially denser
+2. the optimizer gained access to richer structural combinations
+3. the project shifted from "sparse toy search space" toward a more credible PCG benchmark
+
+Supporting artifacts:
+1. [SEGMENT_LIBRARY_V2_REVIEW_2026-04-15_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/SEGMENT_LIBRARY_V2_REVIEW_2026-04-15_CN.md)
+2. [segment_density.json](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/segment_library_analysis/segment_density.json)
+
+### 6.4 Parameter Scan On V2 Library
+`NSGA-II` was re-run over a small parameter grid:
+
+1. `population_size = {20, 30, 40}`
+2. `mutation_rate = {0.1, 0.2, 0.3}`
+3. `seed = {7, 17, 27}`
+4. `generations = 20`
+
+Summary table:
+
+| population_size | mutation_rate | avg_difficulty_error | avg_structural_diversity | avg_emptiness_error | avg_first_front_hv | avg_first_front_spread |
+| --- | --- | --- | --- | --- | --- | --- |
+| 20 | 0.1 | 0.4375 | 0.6250 | 0.3365 | 0.2473 | 0.0225 |
+| 20 | 0.2 | 0.4583 | 0.6042 | 0.3151 | 0.2570 | 0.0320 |
+| 20 | 0.3 | 0.4417 | 0.5417 | 0.3123 | 0.2667 | 0.0527 |
+| 30 | 0.1 | 0.4333 | 0.6042 | 0.3199 | 0.2556 | 0.0203 |
+| 30 | 0.2 | 0.4000 | 0.6250 | 0.3179 | 0.2654 | 0.0307 |
+| 30 | 0.3 | 0.3917 | 0.5833 | 0.3214 | 0.2660 | 0.0346 |
+| 40 | 0.1 | 0.3833 | 0.6042 | 0.3294 | 0.2644 | 0.0252 |
+| 40 | 0.2 | 0.4417 | 0.6042 | 0.3121 | 0.2653 | 0.0349 |
+| 40 | 0.3 | 0.4417 | 0.6042 | 0.3089 | 0.2648 | 0.0423 |
+
+Read-out:
+1. `pop=40, mut=0.1` gives the best `difficulty_error`
+2. `pop=40, mut=0.3` gives the best `emptiness_error`
+3. `pop=20, mut=0.3` gives the best `HV` and `front_spread`
+
+Interpretation:
+1. higher mutation improves front coverage
+2. larger populations help retain good trade-off sets
+3. parameter tuning matters, but content-space quality still dominates the gains
+
+Supporting artifact:
+1. [scan_summary.json](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/parameter_scan/scan_summary.json)
+
+### 6.5 Showcase Samples
+Two representative `NSGA-II` runs were exported for presentation.
+
+Case A:
+- configuration focus: lower `difficulty_error`
+- run: `population_size=40`, `mutation_rate=0.1`, `seed=7`
+- result: `difficulty_error=0.3500`, `structural_diversity=0.5625`, `emptiness_error=0.3446`
+
+Best level:
+
+![Case A Best](../../../output/pcg/showcase/pop40_mut0_1_seed7/best_level.png)
+
+Representative frontier sample:
+
+![Case A Frontier 01](../../../output/pcg/showcase/pop40_mut0_1_seed7/frontier_levels/frontier_01.png)
+
+Case B:
+- configuration focus: stronger Pareto coverage and spread
+- run: `population_size=20`, `mutation_rate=0.3`, `seed=7`
+- result: `difficulty_error=0.4500`, `structural_diversity=0.4375`, `emptiness_error=0.3190`
+
+Best level:
+
+![Case B Best](../../../output/pcg/showcase/pop20_mut0_3_seed7/best_level.png)
+
+Representative frontier sample:
+
+![Case B Frontier 01](../../../output/pcg/showcase/pop20_mut0_3_seed7/frontier_levels/frontier_01.png)
+
+Artifact links:
+1. [Case A Summary](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/showcase/pop40_mut0_1_seed7/summary.json)
+2. [Case B Summary](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/showcase/pop20_mut0_3_seed7/summary.json)
+
+## 7. Current Interpretation
+The project now has enough evidence to support the following claims:
+
+1. the `genotype -> decode -> constraints -> evaluate -> evolve` pipeline is stable
+2. `NSGA-II` shows meaningful Pareto behavior under this problem definition
+3. content-space design has a first-order effect on optimization outcome
+4. V2 segment expansion improved both visual richness and front quality
 
 ## 8. Current Risks
-1. objective proxies are still simplified
-2. raw emptiness remains too high
-3. segment library may not cover enough density patterns
-4. current report evidence still emphasizes best individual over front quality
+1. the objective proxies are still structural approximations rather than direct human-quality measures
+2. raw emptiness is lower than before, but still above the target emptiness band
+3. the report currently lacks trend figures over generations
+4. the project still needs a stronger demonstration layer if presented as a polished system
 
-## 9. Next Iteration Plan
-Immediate next steps:
-1. integrate Pareto quality metrics into compare tables
-2. run small parameter sweep on mutation rate and population size
-3. inspect segment library density distribution
-4. refine report figures and result wording
+## 9. Improvement Directions
+Given that there are roughly two more weeks available, the project can be improved beyond a course-minimum baseline.
 
-Deferred steps:
-1. AI initialization
-2. repair operator
-3. richer gameplay proxy metrics
+High-value directions:
+1. algorithm: add repair operators, adaptive mutation, or compare `SPEA2` against `NSGA-II`
+2. content-space: build a V3 segment library with more deliberate difficulty tiers and motif families
+3. evaluation: add trajectory plots, hypervolume-over-time plots, and maybe a simple human rating loop
+4. presentation: build an interactive level browser or lightweight playable viewer for the exported frontier
+
+Recommended priority:
+1. strengthen the content space one more round
+2. improve experiment visualization
+3. only then consider more advanced evolutionary operators
 
 ## 10. Artifact Mapping
 Use this rule consistently:
