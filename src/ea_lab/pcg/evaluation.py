@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from collections import Counter
 from typing import List
 
 from .config import MarioConfig
 from .models import EvaluationResult, Level, Tile
+from .segments import chromosome_difficulty_tiers
+from .segments import chromosome_family_sequence
 
 
 def _count_tiles(level: Level, tile: int) -> int:
@@ -41,7 +44,32 @@ def _normalized_gap_risk(level: Level, cfg: MarioConfig) -> float:
     return min(1.0, max_gap / max(1, cfg.max_jumpable_gap + 1))
 
 
-def evaluate_level(level: Level, cfg: MarioConfig) -> EvaluationResult:
+def _difficulty_curve_error(chromosome: List[int], cfg: MarioConfig) -> float:
+    tiers = chromosome_difficulty_tiers(chromosome, cfg)
+    if len(tiers) <= 1:
+        return 0.0
+
+    target_curve = [1.0 + 2.0 * idx / (len(tiers) - 1) for idx in range(len(tiers))]
+    return sum(abs(float(tier) - target) for tier, target in zip(tiers, target_curve)) / len(tiers)
+
+
+def _family_balance(chromosome: List[int], cfg: MarioConfig) -> float:
+    families = chromosome_family_sequence(chromosome, cfg)
+    if not families:
+        return 0.0
+
+    counts = Counter(families)
+    expected = len(families) / max(1, len(counts))
+    deviation = sum(abs(count - expected) for count in counts.values()) / len(families)
+    balance = max(0.0, 1.0 - deviation)
+    adjacency_penalty = sum(1 for idx in range(1, len(families)) if families[idx] == families[idx - 1]) / max(
+        1,
+        len(families) - 1,
+    )
+    return max(0.0, balance * (1.0 - 0.35 * adjacency_penalty))
+
+
+def evaluate_level(level: Level, cfg: MarioConfig, chromosome: List[int]) -> EvaluationResult:
     total_tiles = cfg.height * cfg.width
     empty_tiles = _count_tiles(level, Tile.EMPTY)
     enemy_tiles = _count_tiles(level, Tile.ENEMY)
@@ -66,6 +94,8 @@ def evaluate_level(level: Level, cfg: MarioConfig) -> EvaluationResult:
     )
     difficulty_error = abs(difficulty_score - cfg.target_difficulty)
     structural_diversity = _row_diversity(level)
+    difficulty_curve_error = _difficulty_curve_error(chromosome, cfg)
+    family_balance = _family_balance(chromosome, cfg)
 
     return EvaluationResult(
         difficulty_score=difficulty_score,
@@ -73,4 +103,6 @@ def evaluate_level(level: Level, cfg: MarioConfig) -> EvaluationResult:
         structural_diversity=structural_diversity,
         emptiness=emptiness,
         emptiness_error=emptiness_error,
+        difficulty_curve_error=difficulty_curve_error,
+        family_balance=family_balance,
     )

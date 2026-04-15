@@ -61,6 +61,10 @@ Objective layer:
 Descriptor-only metric:
 1. `emptiness`
 
+V3 diagnostic metrics now computed:
+1. `difficulty_curve_error` (lower is better)
+2. `family_balance` (higher is better)
+
 ## 4. Why Two Baselines
 Two baselines are retained because they answer different questions.
 
@@ -276,6 +280,12 @@ Primary design document:
 Interpretation:
 1. V2 solved the problem of being too sparse
 2. V3 is intended to solve the problem of weak semantic structure
+
+Current implementation status:
+1. `segment library` now carries `family`, `variant`, and `difficulty_tier`
+2. evaluation now computes `difficulty_curve_error`
+3. evaluation now computes `family_balance`
+4. these two metrics are currently treated as diagnostics rather than formal optimization objectives
 
 ### 9.2 Frontier Browser Direction
 To improve presentation quality and make Pareto trade-offs easier to inspect, a static frontier browser has been added.

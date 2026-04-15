@@ -27,6 +27,12 @@ chromosome -> decode -> phenotype -> check_constraints -> evaluate -> selection
 MVP genotype format:
 - fixed-length sequence of integer segment IDs
 
+V3-compatible interpretation:
+- each segment ID maps to a segment spec with:
+  - `family`
+  - `variant`
+  - `difficulty_tier`
+
 ### Phenotype
 Decoded tile grid used for:
 - feasibility validation
@@ -78,7 +84,9 @@ render(level: Level, path: str) -> None
     "difficulty_error": float,
     "structural_diversity": float,
     "emptiness_error": float,
-    "emptiness": float
+    "emptiness": float,
+    "difficulty_curve_error": float,
+    "family_balance": float
 }
 ```
 
@@ -99,6 +107,7 @@ MVP objective tuple:
 Notes:
 - `emptiness` is retained as an observable descriptor
 - `emptiness_error = abs(emptiness - target_emptiness)`
+- `difficulty_curve_error` and `family_balance` are currently diagnostic metrics, not formal optimisation objectives
 
 Formal metric definitions are governed by:
 - [MARIO_EVALUATION_SPEC_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md)

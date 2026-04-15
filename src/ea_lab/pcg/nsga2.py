@@ -243,6 +243,8 @@ class Nsga2GenerationLog:
     best_structural_diversity: float | None
     best_emptiness_error: float | None
     best_emptiness: float | None
+    best_difficulty_curve_error: float | None
+    best_family_balance: float | None
 
 
 def run_nsga2(cfg: MarioConfig) -> tuple[List[Individual], List[Nsga2GenerationLog]]:
@@ -269,6 +271,8 @@ def run_nsga2(cfg: MarioConfig) -> tuple[List[Individual], List[Nsga2GenerationL
                 best_structural_diversity=best_eval.structural_diversity if best_eval else None,
                 best_emptiness_error=best_eval.emptiness_error if best_eval else None,
                 best_emptiness=best_eval.emptiness if best_eval else None,
+                best_difficulty_curve_error=best_eval.difficulty_curve_error if best_eval else None,
+                best_family_balance=best_eval.family_balance if best_eval else None,
             )
         )
 

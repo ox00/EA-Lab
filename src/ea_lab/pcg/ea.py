@@ -11,6 +11,7 @@ from .decode import decode_chromosome
 from .evaluation import evaluate_level
 from .models import Chromosome, Individual
 from .segments import build_segment_library
+from .segments import chromosome_segment_metadata
 
 
 def random_chromosome(cfg: MarioConfig, rng: random.Random) -> Chromosome:
@@ -21,7 +22,7 @@ def random_chromosome(cfg: MarioConfig, rng: random.Random) -> Chromosome:
 def evaluate_chromosome(chromosome: Chromosome, cfg: MarioConfig) -> Individual:
     level = decode_chromosome(chromosome, cfg)
     constraints = check_constraints(level, cfg)
-    evaluation = evaluate_level(level, cfg) if constraints.is_feasible else None
+    evaluation = evaluate_level(level, cfg, chromosome) if constraints.is_feasible else None
     return Individual(chromosome=chromosome, constraints=constraints, evaluation=evaluation)
 
 
@@ -231,6 +232,8 @@ class GenerationLog:
     best_structural_diversity: Optional[float]
     best_emptiness_error: Optional[float]
     best_emptiness: Optional[float]
+    best_difficulty_curve_error: Optional[float]
+    best_family_balance: Optional[float]
     constraint_violation_counts: Dict[str, int]
 
 
@@ -243,16 +246,20 @@ def _best_feasible_individual(population: Sequence[Individual]) -> Tuple[Optiona
     return ordered[0], first_front_size
 
 
-def _metric_extrema(population: Sequence[Individual]) -> Tuple[Optional[float], Optional[float], Optional[float], Optional[float]]:
+def _metric_extrema(
+    population: Sequence[Individual],
+) -> Tuple[Optional[float], Optional[float], Optional[float], Optional[float], Optional[float], Optional[float]]:
     feasible_evaluations = [individual.evaluation for individual in population if individual.evaluation is not None]
     if not feasible_evaluations:
-        return None, None, None, None
+        return None, None, None, None, None, None
 
     return (
         min(evaluation.difficulty_error for evaluation in feasible_evaluations),
         max(evaluation.structural_diversity for evaluation in feasible_evaluations),
         min(evaluation.emptiness_error for evaluation in feasible_evaluations),
         min(feasible_evaluations, key=lambda evaluation: evaluation.emptiness_error).emptiness,
+        min(evaluation.difficulty_curve_error for evaluation in feasible_evaluations),
+        max(evaluation.family_balance for evaluation in feasible_evaluations),
     )
 
 
@@ -265,9 +272,14 @@ def run_minimal_ea(cfg: MarioConfig) -> Tuple[List[Individual], List[GenerationL
         feasible = [ind for ind in population if ind.feasible]
         feasible_ratio = len(feasible) / len(population)
         _, best_front_size = _best_feasible_individual(population)
-        best_difficulty_error, best_structural_diversity, best_emptiness_error, best_emptiness = _metric_extrema(
-            population
-        )
+        (
+            best_difficulty_error,
+            best_structural_diversity,
+            best_emptiness_error,
+            best_emptiness,
+            best_difficulty_curve_error,
+            best_family_balance,
+        ) = _metric_extrema(population)
         logs.append(
             GenerationLog(
                 generation=generation,
@@ -278,6 +290,8 @@ def run_minimal_ea(cfg: MarioConfig) -> Tuple[List[Individual], List[GenerationL
                 best_structural_diversity=best_structural_diversity,
                 best_emptiness_error=best_emptiness_error,
                 best_emptiness=best_emptiness,
+                best_difficulty_curve_error=best_difficulty_curve_error,
+                best_family_balance=best_family_balance,
                 constraint_violation_counts=_constraint_violation_counts(population),
             )
         )
@@ -295,15 +309,16 @@ def run_minimal_ea(cfg: MarioConfig) -> Tuple[List[Individual], List[GenerationL
     return population, logs
 
 
-def individual_as_log_dict(individual: Individual) -> Dict[str, object]:
+def individual_as_log_dict(individual: Individual, cfg: MarioConfig) -> Dict[str, object]:
     return {
         "chromosome": list(individual.chromosome),
+        "segment_metadata": chromosome_segment_metadata(individual.chromosome, cfg),
         "constraints": individual.constraints.as_log_dict(),
         "evaluation": individual.evaluation.as_objectives() if individual.evaluation else None,
     }
 
 
-def population_constraint_report(population: Sequence[Individual]) -> Dict[str, object]:
+def population_constraint_report(population: Sequence[Individual], cfg: MarioConfig) -> Dict[str, object]:
     feasible = [individual for individual in population if individual.feasible]
     best_individual, best_front_size = _best_feasible_individual(population)
     return {
@@ -311,8 +326,8 @@ def population_constraint_report(population: Sequence[Individual]) -> Dict[str, 
         "feasible_count": len(feasible),
         "best_front_size": best_front_size,
         "violation_counts": _constraint_violation_counts(population),
-        "individuals": [individual_as_log_dict(individual) for individual in population],
-        "best_individual": individual_as_log_dict(best_individual) if best_individual else None,
+        "individuals": [individual_as_log_dict(individual, cfg) for individual in population],
+        "best_individual": individual_as_log_dict(best_individual, cfg) if best_individual else None,
     }
 
 

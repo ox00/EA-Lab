@@ -21,15 +21,18 @@ chromosome
 ```
 
 ## Scope
-This specification covers four evaluation dimensions:
+This specification covers six evaluation dimensions:
 - `feasibility`
 - `difficulty`
 - `structural diversity`
 - `emptiness balance`
+- `difficulty-curve alignment`
+- `family balance`
 
-In MVP:
+In MVP/V3-transition:
 - `feasibility` is treated as a hard constraint
 - the other three are soft objectives
+- `difficulty_curve_error` and `family_balance` are currently report-side diagnostics
 
 ## 1. Feasibility
 ### Role
@@ -195,6 +198,40 @@ Under:
 Rationale:
 - controllability, variation, and layout density are covered with computable proxies
 
+## 5.1 V3 Diagnostic Metrics
+These metrics are now computed in the codebase, but are not yet part of the formal survivor objective tuple.
+
+### `difficulty_curve_error`
+Role:
+- measures whether segment difficulty tiers follow a reasonable progression across the level
+
+Operational meaning:
+- low values mean the level pacing is closer to the intended early-to-late pressure ramp
+
+Current implementation idea:
+- each segment carries a `difficulty_tier`
+- the chromosome is compared to a target increasing tier curve
+- the average absolute deviation is reported as `difficulty_curve_error`
+
+Direction:
+- lower is better
+
+### `family_balance`
+Role:
+- measures whether the chromosome uses a healthier mix of content families
+
+Operational meaning:
+- penalizes over-concentration on a single family
+- penalizes excessive same-family adjacency
+
+Current implementation idea:
+- count family usage in the chromosome
+- compare the distribution to a balanced mix
+- apply an adjacency penalty for repeated neighboring families
+
+Direction:
+- higher is better
+
 ## 6. Evaluation API Contract
 Recommended evaluator output:
 
@@ -204,7 +241,9 @@ Recommended evaluator output:
     "difficulty_error": 0.18,
     "structural_diversity": 0.74,
     "emptiness_error": 0.04,
-    "emptiness": 0.41
+    "emptiness": 0.41,
+    "difficulty_curve_error": 0.27,
+    "family_balance": 0.83
 }
 ```
 

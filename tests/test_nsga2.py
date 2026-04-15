@@ -3,6 +3,8 @@ import unittest
 from ea_lab.pcg.config import MarioConfig
 from ea_lab.pcg.ea import select_survivors
 from ea_lab.pcg.ea import top_k_feasible_frontier
+from ea_lab.pcg.evaluation import evaluate_level
+from ea_lab.pcg.decode import decode_chromosome
 from ea_lab.pcg.models import ConstraintResult
 from ea_lab.pcg.models import EvaluationResult
 from ea_lab.pcg.models import Individual
@@ -26,6 +28,8 @@ def feasible_individual(chromosome, difficulty_error, structural_diversity, empt
             structural_diversity=structural_diversity,
             emptiness=emptiness,
             emptiness_error=abs(emptiness - 0.45),
+            difficulty_curve_error=0.1,
+            family_balance=0.8,
         ),
     )
 
@@ -47,6 +51,17 @@ def infeasible_individual(chromosome, violations):
 
 
 class NsgaLiteTests(unittest.TestCase):
+    def test_evaluation_emits_v3_metrics(self) -> None:
+        cfg = MarioConfig()
+        chromosome = [0, 6, 4, 7, 10, 11, 13, 17]
+        level = decode_chromosome(chromosome, cfg)
+
+        result = evaluate_level(level, cfg, chromosome)
+
+        self.assertGreaterEqual(result.family_balance, 0.0)
+        self.assertLessEqual(result.family_balance, 1.0)
+        self.assertGreaterEqual(result.difficulty_curve_error, 0.0)
+
     def test_top_k_frontier_returns_only_first_front(self) -> None:
         population = [
             feasible_individual([1], 0.10, 0.50, 0.50),

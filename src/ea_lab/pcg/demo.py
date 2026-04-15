@@ -16,6 +16,7 @@ from .nsga2 import logs_as_dicts as nsga2_logs_as_dicts
 from .nsga2 import run_nsga2
 from .render import render_ascii
 from .render import render_pygame
+from .segments import chromosome_segment_metadata
 
 
 def parse_args() -> argparse.Namespace:
@@ -80,6 +81,7 @@ def write_artifacts(
     summary = {
         "algorithm": algorithm,
         "best_chromosome": best_chromosome,
+        "best_segment_metadata": chromosome_segment_metadata(best_chromosome, cfg),
         "constraints": constraints,
         "evaluation": evaluation,
         "feasible_generations": sum(1 for log in logs if (log["feasible_ratio"] or 0) > 0),
@@ -102,7 +104,7 @@ def main() -> None:
 
     best = population[0]
     level = decode_chromosome(best.chromosome, cfg)
-    constraint_report = population_constraint_report(population)
+    constraint_report = population_constraint_report(population, cfg)
     frontier = top_k_feasible_frontier(population, args.top_k_frontier)
 
     output_dir = Path(args.output_dir)
@@ -125,7 +127,7 @@ def main() -> None:
         record: Dict[str, object] = {
             "rank": rank,
             "ascii_path": f"frontier_levels/{ascii_name}",
-            "individual": individual_as_log_dict(individual),
+            "individual": individual_as_log_dict(individual, cfg),
         }
         if args.render_backend in ("pygame", "both"):
             png_name = f"frontier_{rank:02d}.png"
@@ -153,7 +155,7 @@ def main() -> None:
     print("Best chromosome:", best.chromosome)
     print("Constraints:", best.constraints.as_log_dict())
     print("Evaluation:", best.evaluation.as_objectives() if best.evaluation else None)
-    print("Constraint report:", json.dumps(individual_as_log_dict(best), indent=2))
+    print("Constraint report:", json.dumps(individual_as_log_dict(best, cfg), indent=2))
     print("Frontier levels exported:", len(frontier_levels))
     print("Generations:", len(logs))
 
