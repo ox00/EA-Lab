@@ -4,11 +4,12 @@ import math
 import random
 from dataclasses import asdict
 from dataclasses import dataclass
-from typing import Iterable, List
+from typing import Iterable, List, Sequence, Tuple
 
 from .config import MarioConfig
 from .ea import crossover
 from .ea import evaluate_chromosome
+from .ea import get_objective_specs
 from .ea import mutate
 from .ea import random_chromosome
 from .models import Individual
@@ -22,17 +23,23 @@ def _constraint_violations(individual: Individual) -> int:
     )
 
 
-def _objective_vector(individual: Individual) -> tuple[float, float, float]:
+def _objective_vector(individual: Individual, objective_specs: Sequence[Tuple[str, bool]]) -> tuple[float, ...]:
     assert individual.evaluation is not None
-    return (
-        individual.evaluation.difficulty_error,
-        -individual.evaluation.structural_diversity,
-        individual.evaluation.emptiness_error,
-    )
+    values = []
+    for objective_name, minimize in objective_specs:
+        value = getattr(individual.evaluation, objective_name)
+        values.append(value if minimize else -value)
+    return tuple(values)
 
 
-def _metric_point(individual: Individual) -> tuple[float, float, float]:
+def _metric_point(individual: Individual, cfg: MarioConfig) -> tuple[float, float, float]:
     assert individual.evaluation is not None
+    if cfg.nsga2_objective_mode == "family_4obj":
+        return (
+            individual.evaluation.difficulty_error,
+            individual.evaluation.emptiness_error,
+            1.0 - individual.evaluation.family_balance,
+        )
     return (
         individual.evaluation.difficulty_error,
         1.0 - individual.evaluation.structural_diversity,
@@ -96,7 +103,7 @@ def front_spread(points: list[tuple[float, float, float]]) -> float:
     return sum(distances) / len(distances)
 
 
-def dominates(a: Individual, b: Individual) -> bool:
+def dominates(a: Individual, b: Individual, cfg: MarioConfig) -> bool:
     if a.feasible and not b.feasible:
         return True
     if not a.feasible and b.feasible:
@@ -107,14 +114,15 @@ def dominates(a: Individual, b: Individual) -> bool:
         bv = _constraint_violations(b)
         return av < bv
 
-    av = _objective_vector(a)
-    bv = _objective_vector(b)
+    objective_specs = get_objective_specs(cfg)
+    av = _objective_vector(a, objective_specs)
+    bv = _objective_vector(b, objective_specs)
     not_worse_all = all(x <= y for x, y in zip(av, bv))
     better_any = any(x < y for x, y in zip(av, bv))
     return not_worse_all and better_any
 
 
-def fast_non_dominated_sort(population: List[Individual]) -> tuple[List[List[int]], List[int]]:
+def fast_non_dominated_sort(population: List[Individual], cfg: MarioConfig) -> tuple[List[List[int]], List[int]]:
     size = len(population)
     dominated_sets: list[set[int]] = [set() for _ in range(size)]
     domination_counts = [0 for _ in range(size)]
@@ -125,9 +133,9 @@ def fast_non_dominated_sort(population: List[Individual]) -> tuple[List[List[int
         for q in range(size):
             if p == q:
                 continue
-            if dominates(population[p], population[q]):
+            if dominates(population[p], population[q], cfg):
                 dominated_sets[p].add(q)
-            elif dominates(population[q], population[p]):
+            elif dominates(population[q], population[p], cfg):
                 domination_counts[p] += 1
         if domination_counts[p] == 0:
             ranks[p] = 0
@@ -149,24 +157,18 @@ def fast_non_dominated_sort(population: List[Individual]) -> tuple[List[List[int
     return fronts, ranks
 
 
-def crowding_distance(population: List[Individual], front: List[int]) -> dict[int, float]:
+def crowding_distance(population: List[Individual], front: List[int], cfg: MarioConfig) -> dict[int, float]:
     if not front:
         return {}
     if len(front) <= 2:
         return {idx: float("inf") for idx in front}
 
     distances = {idx: 0.0 for idx in front}
-    objective_count = 3
+    objective_specs = get_objective_specs(cfg)
 
-    for m in range(objective_count):
-        if m == 0:
-            key_fn = lambda i: population[i].evaluation.difficulty_error if population[i].evaluation else float("inf")
-        elif m == 1:
-            key_fn = lambda i: population[i].evaluation.structural_diversity if population[i].evaluation else float("-inf")
-        else:
-            key_fn = lambda i: population[i].evaluation.emptiness_error if population[i].evaluation else float("inf")
-
-        sorted_front = sorted(front, key=key_fn)
+    for objective_name, minimize in objective_specs:
+        key_fn = lambda i: getattr(population[i].evaluation, objective_name) if population[i].evaluation else float("inf")
+        sorted_front = sorted(front, key=key_fn, reverse=not minimize)
         distances[sorted_front[0]] = float("inf")
         distances[sorted_front[-1]] = float("inf")
 
@@ -206,16 +208,16 @@ def _tournament_select(
     return population[a] if rng.random() < 0.5 else population[b]
 
 
-def _build_rank_and_distance(population: List[Individual]) -> tuple[List[int], dict[int, float], List[List[int]]]:
-    fronts, ranks = fast_non_dominated_sort(population)
+def _build_rank_and_distance(population: List[Individual], cfg: MarioConfig) -> tuple[List[int], dict[int, float], List[List[int]]]:
+    fronts, ranks = fast_non_dominated_sort(population, cfg)
     distances: dict[int, float] = {}
     for front in fronts:
-        distances.update(crowding_distance(population, front))
+        distances.update(crowding_distance(population, front, cfg))
     return ranks, distances, fronts
 
 
-def _environmental_selection(combined: List[Individual], population_size: int) -> List[Individual]:
-    fronts, _ = fast_non_dominated_sort(combined)
+def _environmental_selection(combined: List[Individual], population_size: int, cfg: MarioConfig) -> List[Individual]:
+    fronts, _ = fast_non_dominated_sort(combined, cfg)
     next_population: List[Individual] = []
 
     for front in fronts:
@@ -223,7 +225,7 @@ def _environmental_selection(combined: List[Individual], population_size: int) -
             next_population.extend(combined[idx] for idx in front)
             continue
 
-        distances = crowding_distance(combined, front)
+        distances = crowding_distance(combined, front, cfg)
         sorted_front = sorted(front, key=lambda idx: distances[idx], reverse=True)
         remaining = population_size - len(next_population)
         next_population.extend(combined[idx] for idx in sorted_front[:remaining])
@@ -253,12 +255,12 @@ def run_nsga2(cfg: MarioConfig) -> tuple[List[Individual], List[Nsga2GenerationL
     logs: List[Nsga2GenerationLog] = []
 
     for generation in range(cfg.generations):
-        ranks, distances, fronts = _build_rank_and_distance(population)
+        ranks, distances, fronts = _build_rank_and_distance(population, cfg)
         feasible = [ind for ind in population if ind.feasible]
         best_eval = min(feasible, key=lambda ind: ind.evaluation.difficulty_error).evaluation if feasible else None
         first_front = [population[idx] for idx in fronts[0]] if fronts else []
         feasible_first_front = [individual for individual in first_front if individual.feasible]
-        front_points = [_metric_point(individual) for individual in feasible_first_front]
+        front_points = [_metric_point(individual, cfg) for individual in feasible_first_front]
         first_front_size = len(feasible_first_front)
         logs.append(
             Nsga2GenerationLog(
@@ -284,7 +286,7 @@ def run_nsga2(cfg: MarioConfig) -> tuple[List[Individual], List[Nsga2GenerationL
             child = mutate(child, cfg, rng)
             offspring.append(evaluate_chromosome(child, cfg))
 
-        population = _environmental_selection(population + offspring, cfg.population_size)
+        population = _environmental_selection(population + offspring, cfg.population_size, cfg)
 
     return population, logs
 

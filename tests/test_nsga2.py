@@ -63,25 +63,27 @@ class NsgaLiteTests(unittest.TestCase):
         self.assertGreaterEqual(result.difficulty_curve_error, 0.0)
 
     def test_top_k_frontier_returns_only_first_front(self) -> None:
+        cfg = MarioConfig()
         population = [
             feasible_individual([1], 0.10, 0.50, 0.50),
             feasible_individual([2], 0.20, 0.90, 0.90),
             feasible_individual([3], 0.60, 0.40, 0.40),
         ]
 
-        frontier = top_k_feasible_frontier(population, 5)
+        frontier = top_k_feasible_frontier(population, 5, cfg)
 
         chromosomes = {tuple(individual.chromosome) for individual in frontier}
         self.assertEqual(chromosomes, {(1,), (2,)})
 
     def test_top_k_frontier_deduplicates_same_chromosome(self) -> None:
+        cfg = MarioConfig()
         population = [
             feasible_individual([1], 0.10, 0.50, 0.50),
             feasible_individual([1], 0.10, 0.50, 0.50),
             feasible_individual([2], 0.20, 0.90, 0.90),
         ]
 
-        frontier = top_k_feasible_frontier(population, 5)
+        frontier = top_k_feasible_frontier(population, 5, cfg)
 
         self.assertEqual([tuple(ind.chromosome) for ind in frontier], [(1,), (2,)])
 
@@ -98,6 +100,22 @@ class NsgaLiteTests(unittest.TestCase):
 
         self.assertTrue(all(individual.feasible for individual in survivors))
         self.assertEqual({tuple(ind.chromosome) for ind in survivors}, {(1,), (2,)})
+
+    def test_family_balance_objective_mode_changes_frontier_ordering(self) -> None:
+        base = feasible_individual([1], 0.10, 0.50, 0.50)
+        balance_rich = feasible_individual([2], 0.10, 0.50, 0.50)
+        balance_rich.evaluation.family_balance = 0.95
+
+        low_balance = feasible_individual([3], 0.10, 0.50, 0.50)
+        low_balance.evaluation.family_balance = 0.20
+
+        population = [base, balance_rich, low_balance]
+
+        frontier_core = top_k_feasible_frontier(population, 3, MarioConfig(nsga2_objective_mode="core_3obj"))
+        frontier_family = top_k_feasible_frontier(population, 3, MarioConfig(nsga2_objective_mode="family_4obj"))
+
+        self.assertEqual(len(frontier_core), 3)
+        self.assertEqual(tuple(frontier_family[0].chromosome), (2,))
 
 
 if __name__ == "__main__":

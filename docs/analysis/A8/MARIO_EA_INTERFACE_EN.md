@@ -107,7 +107,8 @@ MVP objective tuple:
 Notes:
 - `emptiness` is retained as an observable descriptor
 - `emptiness_error = abs(emptiness - target_emptiness)`
-- `difficulty_curve_error` and `family_balance` are currently diagnostic metrics, not formal optimisation objectives
+- `family_balance` can be promoted into the formal NSGA-II objective tuple via `nsga2_objective_mode="family_4obj"`
+- `difficulty_curve_error` remains diagnostic in the current baseline
 
 Formal metric definitions are governed by:
 - [MARIO_EVALUATION_SPEC_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md)

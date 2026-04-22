@@ -49,6 +49,17 @@ OBJECTIVE_SPECS: Sequence[Tuple[str, bool]] = (
 )
 
 
+def get_objective_specs(cfg: MarioConfig) -> Sequence[Tuple[str, bool]]:
+    if cfg.nsga2_objective_mode == "family_4obj":
+        return (
+            ("difficulty_error", True),
+            ("structural_diversity", False),
+            ("emptiness_error", True),
+            ("family_balance", False),
+        )
+    return OBJECTIVE_SPECS
+
+
 def _constraint_violation_counts(population: Iterable[Individual]) -> Dict[str, int]:
     counts: Dict[str, int] = {}
     for individual in population:
@@ -58,12 +69,20 @@ def _constraint_violation_counts(population: Iterable[Individual]) -> Dict[str, 
 
 
 def _dominates(individual_a: Individual, individual_b: Individual) -> bool:
+    return _dominates_with_specs(individual_a, individual_b, OBJECTIVE_SPECS)
+
+
+def _dominates_with_specs(
+    individual_a: Individual,
+    individual_b: Individual,
+    objective_specs: Sequence[Tuple[str, bool]],
+) -> bool:
     assert individual_a.evaluation is not None
     assert individual_b.evaluation is not None
 
     better_or_equal = True
     strictly_better = False
-    for objective_name, minimize in OBJECTIVE_SPECS:
+    for objective_name, minimize in objective_specs:
         value_a = getattr(individual_a.evaluation, objective_name)
         value_b = getattr(individual_b.evaluation, objective_name)
         if minimize:
@@ -81,7 +100,7 @@ def _dominates(individual_a: Individual, individual_b: Individual) -> bool:
     return better_or_equal and strictly_better
 
 
-def _fast_non_dominated_sort(population: Sequence[Individual]) -> List[List[int]]:
+def _fast_non_dominated_sort(population: Sequence[Individual], objective_specs: Sequence[Tuple[str, bool]]) -> List[List[int]]:
     if not population:
         return []
 
@@ -93,9 +112,9 @@ def _fast_non_dominated_sort(population: Sequence[Individual]) -> List[List[int]
         for index_b, individual_b in enumerate(population):
             if index_a == index_b:
                 continue
-            if _dominates(individual_a, individual_b):
+            if _dominates_with_specs(individual_a, individual_b, objective_specs):
                 dominates[index_a].append(index_b)
-            elif _dominates(individual_b, individual_a):
+            elif _dominates_with_specs(individual_b, individual_a, objective_specs):
                 domination_counts[index_a] += 1
 
         if domination_counts[index_a] == 0:
@@ -116,15 +135,23 @@ def _fast_non_dominated_sort(population: Sequence[Individual]) -> List[List[int]
     return fronts
 
 
-def _crowding_distance(population: Sequence[Individual], front: Sequence[int]) -> Dict[int, float]:
+def _crowding_distance(
+    population: Sequence[Individual],
+    front: Sequence[int],
+    objective_specs: Sequence[Tuple[str, bool]],
+) -> Dict[int, float]:
     if not front:
         return {}
     if len(front) <= 2:
         return {index: float("inf") for index in front}
 
     distances = {index: 0.0 for index in front}
-    for objective_name, _ in OBJECTIVE_SPECS:
-        ordered = sorted(front, key=lambda idx: getattr(population[idx].evaluation, objective_name))
+    for objective_name, minimize in objective_specs:
+        ordered = sorted(
+            front,
+            key=lambda idx: getattr(population[idx].evaluation, objective_name),
+            reverse=not minimize,
+        )
         first_index = ordered[0]
         last_index = ordered[-1]
         distances[first_index] = float("inf")
@@ -146,29 +173,31 @@ def _crowding_distance(population: Sequence[Individual], front: Sequence[int]) -
     return distances
 
 
-def _rank_feasible_population(population: Sequence[Individual]) -> Tuple[List[Individual], int]:
-    fronts = _fast_non_dominated_sort(population)
+def _rank_feasible_population(population: Sequence[Individual], cfg: MarioConfig) -> Tuple[List[Individual], int]:
+    objective_specs = get_objective_specs(cfg)
+    fronts = _fast_non_dominated_sort(population, objective_specs)
     ordered: List[Individual] = []
     first_front_size = len(fronts[0]) if fronts else 0
 
     for front in fronts:
-        distances = _crowding_distance(population, front)
+        distances = _crowding_distance(population, front, objective_specs)
         ordered.extend(population[index] for index in sorted(front, key=lambda idx: distances[idx], reverse=True))
 
     return ordered, first_front_size
 
 
-def top_k_feasible_frontier(population: Sequence[Individual], top_k: int) -> List[Individual]:
+def top_k_feasible_frontier(population: Sequence[Individual], top_k: int, cfg: MarioConfig) -> List[Individual]:
     feasible = [individual for individual in population if individual.feasible]
     if not feasible or top_k <= 0:
         return []
 
-    fronts = _fast_non_dominated_sort(feasible)
+    objective_specs = get_objective_specs(cfg)
+    fronts = _fast_non_dominated_sort(feasible, objective_specs)
     if not fronts:
         return []
 
     first_front = fronts[0]
-    distances = _crowding_distance(feasible, first_front)
+    distances = _crowding_distance(feasible, first_front, objective_specs)
     ordered_indices = sorted(first_front, key=lambda idx: distances[idx], reverse=True)
     unique_frontier: List[Individual] = []
     seen = set()
@@ -200,14 +229,15 @@ def select_survivors(population: Iterable[Individual], cfg: MarioConfig) -> List
 
     survivors: List[Individual] = []
     if feasible:
-        fronts = _fast_non_dominated_sort(feasible)
+        objective_specs = get_objective_specs(cfg)
+        fronts = _fast_non_dominated_sort(feasible, objective_specs)
         for front in fronts:
             if len(survivors) + len(front) <= cfg.population_size:
-                ordered_front, _ = _rank_feasible_population([feasible[index] for index in front])
+                ordered_front, _ = _rank_feasible_population([feasible[index] for index in front], cfg)
                 survivors.extend(ordered_front)
                 continue
 
-            distances = _crowding_distance(feasible, front)
+            distances = _crowding_distance(feasible, front, objective_specs)
             survivors.extend(
                 feasible[index]
                 for index in sorted(front, key=lambda idx: distances[idx], reverse=True)[
@@ -237,12 +267,12 @@ class GenerationLog:
     constraint_violation_counts: Dict[str, int]
 
 
-def _best_feasible_individual(population: Sequence[Individual]) -> Tuple[Optional[Individual], int]:
+def _best_feasible_individual(population: Sequence[Individual], cfg: MarioConfig) -> Tuple[Optional[Individual], int]:
     feasible = [individual for individual in population if individual.feasible]
     if not feasible:
         return None, 0
 
-    ordered, first_front_size = _rank_feasible_population(feasible)
+    ordered, first_front_size = _rank_feasible_population(feasible, cfg)
     return ordered[0], first_front_size
 
 
@@ -271,7 +301,7 @@ def run_minimal_ea(cfg: MarioConfig) -> Tuple[List[Individual], List[GenerationL
     for generation in range(cfg.generations):
         feasible = [ind for ind in population if ind.feasible]
         feasible_ratio = len(feasible) / len(population)
-        _, best_front_size = _best_feasible_individual(population)
+        _, best_front_size = _best_feasible_individual(population, cfg)
         (
             best_difficulty_error,
             best_structural_diversity,
@@ -320,7 +350,7 @@ def individual_as_log_dict(individual: Individual, cfg: MarioConfig) -> Dict[str
 
 def population_constraint_report(population: Sequence[Individual], cfg: MarioConfig) -> Dict[str, object]:
     feasible = [individual for individual in population if individual.feasible]
-    best_individual, best_front_size = _best_feasible_individual(population)
+    best_individual, best_front_size = _best_feasible_individual(population, cfg)
     return {
         "population_size": len(population),
         "feasible_count": len(feasible),

@@ -34,6 +34,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output-dir", type=str, default="output/pcg/mvp")
     parser.add_argument("--algorithm", choices=["ea", "nsga2"], default="ea")
+    parser.add_argument("--nsga2-objective-mode", choices=["core_3obj", "family_4obj"], default="core_3obj")
     parser.add_argument("--render-backend", choices=["ascii", "pygame", "both"], default="both")
     parser.add_argument("--tile-size", type=int, default=24)
     parser.add_argument("--top-k-frontier", type=int, default=5)
@@ -53,6 +54,7 @@ def build_config(args: argparse.Namespace) -> MarioConfig:
         mutation_rate=args.mutation_rate,
         generations=args.generations,
         seed=args.seed,
+        nsga2_objective_mode=args.nsga2_objective_mode,
     )
 
 
@@ -80,6 +82,7 @@ def write_artifacts(
     )
     summary = {
         "algorithm": algorithm,
+        "nsga2_objective_mode": cfg.nsga2_objective_mode if algorithm == "nsga2" else None,
         "best_chromosome": best_chromosome,
         "best_segment_metadata": chromosome_segment_metadata(best_chromosome, cfg),
         "constraints": constraints,
@@ -105,7 +108,7 @@ def main() -> None:
     best = population[0]
     level = decode_chromosome(best.chromosome, cfg)
     constraint_report = population_constraint_report(population, cfg)
-    frontier = top_k_feasible_frontier(population, args.top_k_frontier)
+    frontier = top_k_feasible_frontier(population, args.top_k_frontier, cfg)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -152,6 +155,8 @@ def main() -> None:
 
     print("Output dir:", str(output_dir))
     print("Algorithm:", args.algorithm)
+    if args.algorithm == "nsga2":
+        print("NSGA-II objective mode:", cfg.nsga2_objective_mode)
     print("Best chromosome:", best.chromosome)
     print("Constraints:", best.constraints.as_log_dict())
     print("Evaluation:", best.evaluation.as_objectives() if best.evaluation else None)

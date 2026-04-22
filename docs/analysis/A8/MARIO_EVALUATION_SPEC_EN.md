@@ -29,10 +29,11 @@ This specification covers six evaluation dimensions:
 - `difficulty-curve alignment`
 - `family balance`
 
-In MVP/V3-transition:
+In MVP/V3.1-transition:
 - `feasibility` is treated as a hard constraint
 - the other three are soft objectives
-- `difficulty_curve_error` and `family_balance` are currently report-side diagnostics
+- `family_balance` can now be promoted into the formal NSGA-II objective tuple
+- `difficulty_curve_error` remains diagnostic in the current baseline
 
 ## 1. Feasibility
 ### Role
@@ -199,7 +200,7 @@ Rationale:
 - controllability, variation, and layout density are covered with computable proxies
 
 ## 5.1 V3 Diagnostic Metrics
-These metrics are now computed in the codebase, but are not yet part of the formal survivor objective tuple.
+These metrics are now computed in the codebase.
 
 ### `difficulty_curve_error`
 Role:
@@ -231,6 +232,9 @@ Current implementation idea:
 
 Direction:
 - higher is better
+
+V3.1 note:
+- `family_balance` is now supported as a formal NSGA-II objective under the `family_4obj` mode
 
 ## 6. Evaluation API Contract
 Recommended evaluator output:
