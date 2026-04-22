@@ -63,7 +63,7 @@ If any trigger appears, stop and re-align before new coding:
 5. Team members run different evaluation versions.
 
 ## Reference Documents
-1. Interface CN: [MARIO_EA_INTERFACE_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE_CN.md)
-2. Interface EN: [MARIO_EA_INTERFACE_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE_EN.md)
-3. Workflow: [MARIO_EA_WORKFLOW.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EA_WORKFLOW.md)
-4. Evaluation spec: [MARIO_EVALUATION_SPEC_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md)
+1. Interface CN: [EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE_CN.md](../../../docs/analysis/A8/MARIO_EA_INTERFACE_CN.md)
+2. Interface EN: [EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE_EN.md](../../../docs/analysis/A8/MARIO_EA_INTERFACE_EN.md)
+3. Workflow: [EA-Lab/docs/analysis/A8/MARIO_EA_WORKFLOW.md](../../../docs/analysis/A8/MARIO_EA_WORKFLOW.md)
+4. Evaluation spec: [EA-Lab/docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md](../../../docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md)

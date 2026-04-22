@@ -25,8 +25,8 @@
 ### Step 1. 先说明 pipeline
 参考文档:
 
-1. [MARIO_PCG_PIPELINE_DIAGRAM.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_PCG_PIPELINE_DIAGRAM.md)
-2. [MARIO_EA_INTERFACE_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE_EN.md)
+1. [EA-Lab/docs/analysis/A8/MARIO_PCG_PIPELINE_DIAGRAM.md](../../docs/analysis/A8/MARIO_PCG_PIPELINE_DIAGRAM.md)
+2. [EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE_EN.md](../../docs/analysis/A8/MARIO_EA_INTERFACE_EN.md)
 
 建议口径:
 
@@ -35,7 +35,7 @@
 ### Step 2. 再打开 frontier browser
 浏览器入口:
 
-1. [index.html](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/results/frontier-browser/index.html)
+1. [EA-Lab/docs/results/frontier-browser/index.html](../../docs/results/frontier-browser/index.html)
 
 浏览器的作用不是“展示一张图”，而是展示:
 
@@ -51,7 +51,7 @@
 ### 4.1 `core_3obj_seed7`
 路径:
 
-1. [core_3obj_seed7](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/final_showcase/core_3obj_seed7)
+1. [EA-Lab/output/pcg/final_showcase/core_3obj_seed7](../../output/pcg/final_showcase/core_3obj_seed7)
 
 定位:
 
@@ -73,7 +73,7 @@
 ### 4.2 `family_4obj_seed27`
 路径:
 
-1. [family_4obj_seed27](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/final_showcase/family_4obj_seed27)
+1. [EA-Lab/output/pcg/final_showcase/family_4obj_seed27](../../output/pcg/final_showcase/family_4obj_seed27)
 
 定位:
 
@@ -95,7 +95,7 @@
 ### 4.3 `curve_4obj_seed27`
 路径:
 
-1. [curve_4obj_seed27](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/final_showcase/curve_4obj_seed27)
+1. [EA-Lab/output/pcg/final_showcase/curve_4obj_seed27](../../output/pcg/final_showcase/curve_4obj_seed27)
 
 定位:
 
@@ -131,7 +131,7 @@
 
 参考文档:
 
-1. [V33_SEMANTIC_5OBJ_REVIEW_2026-04-22_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/V33_SEMANTIC_5OBJ_REVIEW_2026-04-22_CN.md)
+1. [EA-Lab/docs/analysis/A8/V33_SEMANTIC_5OBJ_REVIEW_2026-04-22_CN.md](../../docs/analysis/A8/V33_SEMANTIC_5OBJ_REVIEW_2026-04-22_CN.md)
 
 原因很直接:
 
@@ -193,11 +193,11 @@
 6. 当前重点: 强化演示层与最终表达质量
 
 ## 10. 推荐配套材料
-1. [frontier-browser/index.html](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/results/frontier-browser/index.html)
-2. [REPORT_WORKING_DRAFT.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/REPORT_WORKING_DRAFT.md)
-3. [V31_FAMILY_OBJECTIVE_REVIEW_2026-04-21_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/V31_FAMILY_OBJECTIVE_REVIEW_2026-04-21_CN.md)
-4. [V32_CURVE_OBJECTIVE_REVIEW_2026-04-22_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/V32_CURVE_OBJECTIVE_REVIEW_2026-04-22_CN.md)
-5. [V33_SEMANTIC_5OBJ_REVIEW_2026-04-22_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/docs/analysis/A8/V33_SEMANTIC_5OBJ_REVIEW_2026-04-22_CN.md)
+1. [EA-Lab/docs/results/frontier-browser/index.html](../../docs/results/frontier-browser/index.html)
+2. [EA-Lab/docs/analysis/A8/REPORT_WORKING_DRAFT.md](../../docs/analysis/A8/REPORT_WORKING_DRAFT.md)
+3. [EA-Lab/docs/analysis/A8/V31_FAMILY_OBJECTIVE_REVIEW_2026-04-21_CN.md](../../docs/analysis/A8/V31_FAMILY_OBJECTIVE_REVIEW_2026-04-21_CN.md)
+4. [EA-Lab/docs/analysis/A8/V32_CURVE_OBJECTIVE_REVIEW_2026-04-22_CN.md](../../docs/analysis/A8/V32_CURVE_OBJECTIVE_REVIEW_2026-04-22_CN.md)
+5. [EA-Lab/docs/analysis/A8/V33_SEMANTIC_5OBJ_REVIEW_2026-04-22_CN.md](../../docs/analysis/A8/V33_SEMANTIC_5OBJ_REVIEW_2026-04-22_CN.md)
 
 ## 11. 最终结论
 本次最终展示建议聚焦一个核心判断:

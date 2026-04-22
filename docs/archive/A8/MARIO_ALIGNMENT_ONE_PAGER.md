@@ -92,7 +92,7 @@ chromosome
 只要这 5 步通了，项目就真正进入可执行状态。
 
 ## 对应详细文档
-- 中文接口版：[MARIO_EA_INTERFACE_CN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE_CN.md)
-- 英文接口版：[MARIO_EA_INTERFACE_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE_EN.md)
-- 当前工作版：[MARIO_EA_INTERFACE.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE.md)
-- EA 推进版：[MARIO_EA_WORKFLOW.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_WORKFLOW.md)
+- 中文接口版：[EA-Lab/sample/A8/MARIO_EA_INTERFACE_CN.md](../../../sample/A8/MARIO_EA_INTERFACE_CN.md)
+- 英文接口版：[EA-Lab/sample/A8/MARIO_EA_INTERFACE_EN.md](../../../sample/A8/MARIO_EA_INTERFACE_EN.md)
+- 当前工作版：[EA-Lab/sample/A8/MARIO_EA_INTERFACE.md](../../../sample/A8/MARIO_EA_INTERFACE.md)
+- EA 推进版：[EA-Lab/sample/A8/MARIO_EA_WORKFLOW.md](../../../sample/A8/MARIO_EA_WORKFLOW.md)

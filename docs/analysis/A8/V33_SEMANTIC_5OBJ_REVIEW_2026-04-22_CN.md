@@ -27,7 +27,7 @@
 
 输出目录:
 
-1. [output/pcg/v33_semantic_compare/semantic_5obj_seed7](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/v33_semantic_compare/semantic_5obj_seed7)
+1. [EA-Lab/output/pcg/v33_semantic_compare/semantic_5obj_seed7](../../../output/pcg/v33_semantic_compare/semantic_5obj_seed7)
 
 ## 3. 与前三种模式的比较
 

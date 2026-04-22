@@ -14,8 +14,8 @@
 ### 2.1 Baseline compare (V3)
 输出目录:
 
-1. [compare_summary.json](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/baseline_compare_v3/compare_summary.json)
-2. [compare_summary.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/baseline_compare_v3/compare_summary.md)
+1. [EA-Lab/output/pcg/baseline_compare_v3/compare_summary.json](../../../output/pcg/baseline_compare_v3/compare_summary.json)
+2. [EA-Lab/output/pcg/baseline_compare_v3/compare_summary.md](../../../output/pcg/baseline_compare_v3/compare_summary.md)
 
 设置:
 
@@ -27,8 +27,8 @@
 ### 2.2 V3 小型参数扫描
 输出目录:
 
-1. [scan_summary.json](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/parameter_scan_v3_small/scan_summary.json)
-2. [scan_summary.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/parameter_scan_v3_small/scan_summary.md)
+1. [EA-Lab/output/pcg/parameter_scan_v3_small/scan_summary.json](../../../output/pcg/parameter_scan_v3_small/scan_summary.json)
+2. [EA-Lab/output/pcg/parameter_scan_v3_small/scan_summary.md](../../../output/pcg/parameter_scan_v3_small/scan_summary.md)
 
 设置:
 

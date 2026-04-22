@@ -37,9 +37,9 @@
 
 ### 2.3 输出目录
 
-1. `core_3obj`: [output/pcg/v31_compare/core_3obj_seed7](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/v31_compare/core_3obj_seed7)
-2. `family_4obj`: [output/pcg/v31_compare/family_4obj_seed7](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/v31_compare/family_4obj_seed7)
-3. `curve_4obj`: [output/pcg/v32_curve_compare/curve_4obj_seed7](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/output/pcg/v32_curve_compare/curve_4obj_seed7)
+1. `core_3obj`: [EA-Lab/output/pcg/v31_compare/core_3obj_seed7](../../../output/pcg/v31_compare/core_3obj_seed7)
+2. `family_4obj`: [EA-Lab/output/pcg/v31_compare/family_4obj_seed7](../../../output/pcg/v31_compare/family_4obj_seed7)
+3. `curve_4obj`: [EA-Lab/output/pcg/v32_curve_compare/curve_4obj_seed7](../../../output/pcg/v32_curve_compare/curve_4obj_seed7)
 
 ## 3. 平均结果
 
