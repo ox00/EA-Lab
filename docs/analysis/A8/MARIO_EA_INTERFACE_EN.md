@@ -111,7 +111,7 @@ Notes:
 - `difficulty_curve_error` remains diagnostic in the current baseline
 
 Formal metric definitions are governed by:
-- [EA-Lab/docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md](../../../docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md)
+- [MARIO_EVALUATION_SPEC_EN.md](../../../docs/analysis/A8/MARIO_EVALUATION_SPEC_EN.md)
 
 ## Responsibility Split
 ### Generation side

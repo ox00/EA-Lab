@@ -117,8 +117,8 @@ Interpretation:
 3. algorithm comparison was valid, but the search space was limiting output quality
 
 Supporting artifacts:
-1. [EA-Lab/docs/analysis/A8/PHASE_REVIEW_2026-04-13_CN.md](../../../docs/analysis/A8/PHASE_REVIEW_2026-04-13_CN.md)
-2. [EA-Lab/output/pcg/baseline_compare/compare_summary.json](../../../output/pcg/baseline_compare/compare_summary.json)
+1. [PHASE_REVIEW_2026-04-13_CN.md](../../../docs/analysis/A8/PHASE_REVIEW_2026-04-13_CN.md)
+2. [compare_summary.json](../../../output/pcg/baseline_compare/compare_summary.json)
 
 Baseline compare figure:
 
@@ -159,8 +159,8 @@ Interpretation:
 3. the project shifted from "sparse toy search space" toward a more credible PCG benchmark
 
 Supporting artifacts:
-1. [EA-Lab/docs/analysis/A8/SEGMENT_LIBRARY_V2_REVIEW_2026-04-15_CN.md](../../../docs/analysis/A8/SEGMENT_LIBRARY_V2_REVIEW_2026-04-15_CN.md)
-2. [EA-Lab/output/pcg/segment_library_analysis/segment_density.json](../../../output/pcg/segment_library_analysis/segment_density.json)
+1. [SEGMENT_LIBRARY_V2_REVIEW_2026-04-15_CN.md](../../../docs/analysis/A8/SEGMENT_LIBRARY_V2_REVIEW_2026-04-15_CN.md)
+2. [segment_density.json](../../../output/pcg/segment_library_analysis/segment_density.json)
 
 ### 6.4 Parameter Scan On V2 Library
 `NSGA-II` was re-run over a small parameter grid:
@@ -195,7 +195,7 @@ Interpretation:
 3. parameter tuning matters, but content-space quality still dominates the gains
 
 Supporting artifact:
-1. [EA-Lab/output/pcg/parameter_scan/scan_summary.json](../../../output/pcg/parameter_scan/scan_summary.json)
+1. [scan_summary.json](../../../output/pcg/parameter_scan/scan_summary.json)
 
 Parameter scan figure:
 
@@ -231,8 +231,8 @@ Representative frontier sample:
 ![Case B Frontier 01](../../../output/pcg/showcase/pop20_mut0_3_seed7/frontier_levels/frontier_01.png)
 
 Artifact links:
-1. [EA-Lab/output/pcg/showcase/pop40_mut0_1_seed7/summary.json](../../../output/pcg/showcase/pop40_mut0_1_seed7/summary.json)
-2. [EA-Lab/output/pcg/showcase/pop20_mut0_3_seed7/summary.json](../../../output/pcg/showcase/pop20_mut0_3_seed7/summary.json)
+1. [summary.json](../../../output/pcg/showcase/pop40_mut0_1_seed7/summary.json)
+2. [summary.json](../../../output/pcg/showcase/pop20_mut0_3_seed7/summary.json)
 
 Generation-trend figure:
 
@@ -275,7 +275,7 @@ Core idea:
 3. support future objectives such as difficulty-curve control and motif-balance evaluation
 
 Primary design document:
-1. [EA-Lab/docs/analysis/A8/SEGMENT_LIBRARY_V3_PLAN_2026-04-15_CN.md](../../../docs/analysis/A8/SEGMENT_LIBRARY_V3_PLAN_2026-04-15_CN.md)
+1. [SEGMENT_LIBRARY_V3_PLAN_2026-04-15_CN.md](../../../docs/analysis/A8/SEGMENT_LIBRARY_V3_PLAN_2026-04-15_CN.md)
 
 Interpretation:
 1. V2 solved the problem of being too sparse
@@ -296,10 +296,10 @@ Role:
 3. connect metrics, constraints, and chromosome structure in a presentation-friendly way
 
 Static browser entry:
-1. [EA-Lab/docs/results/frontier-browser/index.html](../../../docs/results/frontier-browser/index.html)
+1. [index.html](../../../docs/results/frontier-browser/index.html)
 
 Browser data builder:
-1. [EA-Lab/scripts/build-frontier-browser-data.py](../../../scripts/build-frontier-browser-data.py)
+1. [build-frontier-browser-data.py](../../../scripts/build-frontier-browser-data.py)
 
 Interpretation:
 1. this improves the demonstration layer without changing the core optimizer

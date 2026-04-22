@@ -4,8 +4,8 @@
 本文件是 A8 MVP 阶段的中文约束摘要。
 
 权威接口定义以：
-- [EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE.md](../../../docs/analysis/A8/MARIO_EA_INTERFACE.md)
-- [EA-Lab/docs/analysis/A8/MARIO_EA_INTERFACE_EN.md](../../../docs/analysis/A8/MARIO_EA_INTERFACE_EN.md)
+- [MARIO_EA_INTERFACE.md](../../../docs/analysis/A8/MARIO_EA_INTERFACE.md)
+- [MARIO_EA_INTERFACE_EN.md](../../../docs/analysis/A8/MARIO_EA_INTERFACE_EN.md)
 
 为准。
 

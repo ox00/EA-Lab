@@ -34,8 +34,8 @@
 
 ### 2.3 输出目录
 
-1. `core_3obj`: [EA-Lab/output/pcg/v31_compare/core_3obj_seed7](../../../output/pcg/v31_compare/core_3obj_seed7)
-2. `family_4obj`: [EA-Lab/output/pcg/v31_compare/family_4obj_seed7](../../../output/pcg/v31_compare/family_4obj_seed7)
+1. `core_3obj`: [core_3obj_seed7](../../../output/pcg/v31_compare/core_3obj_seed7)
+2. `family_4obj`: [family_4obj_seed7](../../../output/pcg/v31_compare/family_4obj_seed7)
 
 ## 3. 平均结果
 

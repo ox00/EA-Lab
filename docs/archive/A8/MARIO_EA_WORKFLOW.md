@@ -201,7 +201,7 @@
 ## 第 10 步：你这一侧的最小待办
 你可以直接按这个列表开工：
 
-1. 和同学确认 [EA-Lab/sample/A8/MARIO_EA_INTERFACE.md](../../../sample/A8/MARIO_EA_INTERFACE.md)
+1. 和同学确认 [MARIO_EA_INTERFACE.md](../../../docs/archive/A8/MARIO_EA_INTERFACE.md)
 2. 拿到 `decode()` 的最小实现
 3. 拿到 `check_constraints()` 的最小实现
 4. 拿到 `evaluate()` 的最小实现
