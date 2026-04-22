@@ -57,6 +57,21 @@ def get_objective_specs(cfg: MarioConfig) -> Sequence[Tuple[str, bool]]:
             ("emptiness_error", True),
             ("family_balance", False),
         )
+    if cfg.nsga2_objective_mode == "curve_4obj":
+        return (
+            ("difficulty_error", True),
+            ("structural_diversity", False),
+            ("emptiness_error", True),
+            ("difficulty_curve_error", True),
+        )
+    if cfg.nsga2_objective_mode == "semantic_5obj":
+        return (
+            ("difficulty_error", True),
+            ("structural_diversity", False),
+            ("emptiness_error", True),
+            ("family_balance", False),
+            ("difficulty_curve_error", True),
+        )
     return OBJECTIVE_SPECS
 
 

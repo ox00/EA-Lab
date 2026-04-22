@@ -38,15 +38,35 @@ function metricCard(label, value) {
   return card;
 }
 
+function renderCompareGrid() {
+  const compareGrid = document.getElementById("compare-grid");
+  compareGrid.innerHTML = "";
+
+  state.data.compare_summary.forEach((row) => {
+    const card = document.createElement("article");
+    card.className = "compare-card";
+    card.innerHTML = `
+      <p class="frontier-title">${row.title}</p>
+      <p class="frontier-meta">${row.objective_mode}</p>
+      <p class="frontier-meta">diff_err=${formatNumber(row.difficulty_error)}</p>
+      <p class="frontier-meta">curve=${formatNumber(row.difficulty_curve_error)}</p>
+      <p class="frontier-meta">family=${formatNumber(row.family_balance)}</p>
+      <p class="frontier-meta">hv=${formatNumber(row.front_hv)}</p>
+    `;
+    compareGrid.appendChild(card);
+  });
+}
+
 function buildMetricCards(caseData) {
   const metricCards = document.getElementById("metric-cards");
   metricCards.innerHTML = "";
 
   const metrics = [
+    ["objective_mode", caseData.objective_mode || "-"],
     ["difficulty_error", formatNumber(caseData.evaluation.difficulty_error)],
-    ["structural_diversity", formatNumber(caseData.evaluation.structural_diversity)],
+    ["curve_error", formatNumber(caseData.evaluation.difficulty_curve_error)],
+    ["family_balance", formatNumber(caseData.evaluation.family_balance)],
     ["emptiness_error", formatNumber(caseData.evaluation.emptiness_error)],
-    ["emptiness", formatNumber(caseData.evaluation.emptiness)],
     ["front_hv", formatNumber(caseData.final_front_hv)],
     ["front_spread", formatNumber(caseData.final_front_spread)],
   ];
@@ -70,7 +90,7 @@ function renderCaseList() {
     button.innerHTML = `
       <p class="frontier-title">${caseData.title}</p>
       <p class="frontier-meta">
-        pop=${caseData.config.population_size}, mut=${caseData.config.mutation_rate}, seed=${caseData.config.seed}
+        ${caseData.objective_mode} · seed=${caseData.config.seed}
       </p>
     `;
     button.addEventListener("click", () => {
@@ -86,11 +106,8 @@ function renderCaseSummary(caseData) {
   document.getElementById("case-tag").textContent = caseData.algorithm.toUpperCase();
   document.getElementById("case-title").textContent = caseData.title;
   document.getElementById("case-summary").textContent =
-    `Population ${caseData.config.population_size}, mutation ${caseData.config.mutation_rate}, ` +
-    `seed ${caseData.config.seed}, generations ${caseData.config.generations}. ` +
-    `Target difficulty ${formatNumber(caseData.config.target_difficulty, 2)}, ` +
-    `target emptiness ${formatNumber(caseData.config.target_emptiness, 2)}.`;
-
+    `Mode ${caseData.objective_mode}, population ${caseData.config.population_size}, mutation ${caseData.config.mutation_rate}, ` +
+    `seed ${caseData.config.seed}, generations ${caseData.config.generations}.`;
   buildMetricCards(caseData);
 }
 
@@ -102,6 +119,7 @@ function selectedCandidate(caseData) {
       evaluation: caseData.evaluation,
       constraints: caseData.constraints,
       chromosome: caseData.best_level.chromosome,
+      segmentMetadata: caseData.best_level.segment_metadata || [],
       asciiPath: caseData.best_level.ascii_path,
     };
   }
@@ -113,8 +131,17 @@ function selectedCandidate(caseData) {
     evaluation: frontierItem.evaluation,
     constraints: frontierItem.constraints,
     chromosome: frontierItem.chromosome,
+    segmentMetadata: frontierItem.segment_metadata || [],
     asciiPath: frontierItem.ascii_path,
   };
+}
+
+function familySequence(segmentMetadata) {
+  return segmentMetadata.map((item) => item.family);
+}
+
+function tierSequence(segmentMetadata) {
+  return segmentMetadata.map((item) => item.difficulty_tier);
 }
 
 function renderViewer(caseData) {
@@ -124,6 +151,8 @@ function renderViewer(caseData) {
   const jsonLink = document.getElementById("viewer-json-link");
   const selectedMetrics = document.getElementById("selected-metrics");
   const selectedChromosome = document.getElementById("selected-chromosome");
+  const selectedFamilies = document.getElementById("selected-families");
+  const selectedTiers = document.getElementById("selected-tiers");
 
   title.textContent = candidate.label;
   image.src = candidate.imagePath;
@@ -142,6 +171,8 @@ function renderViewer(caseData) {
     constraints: candidate.constraints,
   });
   selectedChromosome.textContent = formatJson(candidate.chromosome);
+  selectedFamilies.textContent = familySequence(candidate.segmentMetadata).join(" -> ");
+  selectedTiers.textContent = tierSequence(candidate.segmentMetadata).join(" -> ");
 }
 
 function renderFrontierList(caseData) {
@@ -158,9 +189,7 @@ function renderFrontierList(caseData) {
     button.innerHTML = `
       <p class="frontier-title">Rank ${item.rank}</p>
       <p class="frontier-meta">
-        diff_err=${formatNumber(item.evaluation.difficulty_error)}, 
-        div=${formatNumber(item.evaluation.structural_diversity)}, 
-        empty_err=${formatNumber(item.evaluation.emptiness_error)}
+        diff=${formatNumber(item.evaluation.difficulty_error)} · curve=${formatNumber(item.evaluation.difficulty_curve_error)} · family=${formatNumber(item.evaluation.family_balance)}
       </p>
     `;
     button.addEventListener("click", () => {
@@ -173,6 +202,7 @@ function renderFrontierList(caseData) {
 }
 
 function render() {
+  renderCompareGrid();
   renderCaseList();
   const caseData = currentCase();
   renderCaseSummary(caseData);

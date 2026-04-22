@@ -117,6 +117,40 @@ class NsgaLiteTests(unittest.TestCase):
         self.assertEqual(len(frontier_core), 3)
         self.assertEqual(tuple(frontier_family[0].chromosome), (2,))
 
+    def test_curve_objective_mode_prefers_lower_curve_error(self) -> None:
+        base = feasible_individual([1], 0.10, 0.50, 0.50)
+        smooth_curve = feasible_individual([2], 0.10, 0.50, 0.50)
+        smooth_curve.evaluation.difficulty_curve_error = 0.05
+
+        rough_curve = feasible_individual([3], 0.10, 0.50, 0.50)
+        rough_curve.evaluation.difficulty_curve_error = 0.80
+
+        population = [base, smooth_curve, rough_curve]
+
+        frontier_core = top_k_feasible_frontier(population, 3, MarioConfig(nsga2_objective_mode="core_3obj"))
+        frontier_curve = top_k_feasible_frontier(population, 3, MarioConfig(nsga2_objective_mode="curve_4obj"))
+
+        self.assertEqual(len(frontier_core), 3)
+        self.assertEqual(tuple(frontier_curve[0].chromosome), (2,))
+
+    def test_semantic_objective_mode_prefers_curve_and_family_tradeoff(self) -> None:
+        balanced_smooth = feasible_individual([1], 0.10, 0.50, 0.50)
+        balanced_smooth.evaluation.family_balance = 0.95
+        balanced_smooth.evaluation.difficulty_curve_error = 0.05
+
+        family_only = feasible_individual([2], 0.10, 0.50, 0.50)
+        family_only.evaluation.family_balance = 0.95
+        family_only.evaluation.difficulty_curve_error = 0.90
+
+        curve_only = feasible_individual([3], 0.10, 0.50, 0.50)
+        curve_only.evaluation.family_balance = 0.20
+        curve_only.evaluation.difficulty_curve_error = 0.05
+
+        population = [balanced_smooth, family_only, curve_only]
+        frontier_semantic = top_k_feasible_frontier(population, 3, MarioConfig(nsga2_objective_mode="semantic_5obj"))
+
+        self.assertEqual(tuple(frontier_semantic[0].chromosome), (1,))
+
 
 if __name__ == "__main__":
     unittest.main()

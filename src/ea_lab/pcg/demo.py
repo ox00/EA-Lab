@@ -34,7 +34,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output-dir", type=str, default="output/pcg/mvp")
     parser.add_argument("--algorithm", choices=["ea", "nsga2"], default="ea")
-    parser.add_argument("--nsga2-objective-mode", choices=["core_3obj", "family_4obj"], default="core_3obj")
+    parser.add_argument(
+        "--nsga2-objective-mode",
+        choices=["core_3obj", "family_4obj", "curve_4obj", "semantic_5obj"],
+        default="core_3obj",
+    )
     parser.add_argument("--render-backend", choices=["ascii", "pygame", "both"], default="both")
     parser.add_argument("--tile-size", type=int, default=24)
     parser.add_argument("--top-k-frontier", type=int, default=5)

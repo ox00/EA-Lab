@@ -7,21 +7,13 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SHOWCASE_ROOT = ROOT / "output" / "pcg" / "showcase"
 BROWSER_ROOT = ROOT / "docs" / "results" / "frontier-browser"
 ASSET_ROOT = BROWSER_ROOT / "assets"
-
-
-def humanize_case_name(case_id: str) -> str:
-    parts = case_id.split("_")
-    if len(parts) != 4:
-        return case_id.replace("_", " ")
-
-    return (
-        f"pop={parts[0].removeprefix('pop')}, "
-        f"mut={parts[1].removeprefix('mut')}.{parts[2]}, "
-        f"seed={parts[3].removeprefix('seed')}"
-    )
+CASE_SOURCES = [
+    ("core baseline", ROOT / "output" / "pcg" / "v31_compare" / "core_3obj_seed7"),
+    ("family showcase", ROOT / "output" / "pcg" / "v31_compare" / "family_4obj_seed27"),
+    ("curve showcase", ROOT / "output" / "pcg" / "v32_curve_compare" / "curve_4obj_seed27"),
+]
 
 
 def load_json(path: Path) -> dict:
@@ -40,7 +32,7 @@ def maybe_copy_text(source: Path, target: Path) -> str | None:
     return copy_asset(source, target)
 
 
-def build_case(case_dir: Path) -> dict:
+def build_case(label: str, case_dir: Path) -> dict:
     summary = load_json(case_dir / "summary.json")
     frontier = load_json(case_dir / "frontier_summary.json")
     config = load_json(case_dir / "config.json")
@@ -52,8 +44,9 @@ def build_case(case_dir: Path) -> dict:
 
     case = {
         "id": case_dir.name,
-        "title": humanize_case_name(case_dir.name),
+        "title": label,
         "algorithm": summary.get("algorithm"),
+        "objective_mode": summary.get("nsga2_objective_mode"),
         "config": {
             "population_size": config.get("population_size"),
             "mutation_rate": config.get("mutation_rate"),
@@ -70,6 +63,7 @@ def build_case(case_dir: Path) -> dict:
             "png_path": best_png_path,
             "ascii_path": best_txt_path,
             "chromosome": summary.get("best_chromosome", []),
+            "segment_metadata": summary.get("best_segment_metadata", []),
         },
         "logs": logs,
         "frontier": [],
@@ -82,22 +76,43 @@ def build_case(case_dir: Path) -> dict:
         rank = item.get("rank")
         png_source = case_dir / item["png_path"]
         ascii_source = case_dir / item["ascii_path"]
-        entry = {
-            "rank": rank,
-            "png_path": copy_asset(
-                png_source,
-                browser_case_asset_root / "frontier_levels" / f"frontier_{rank:02d}.png",
-            ),
-            "ascii_path": maybe_copy_text(
-                ascii_source,
-                browser_case_asset_root / "frontier_levels" / f"frontier_{rank:02d}.txt",
-            ),
-            "evaluation": item.get("individual", {}).get("evaluation", {}),
-            "constraints": item.get("individual", {}).get("constraints", {}),
-            "chromosome": item.get("individual", {}).get("chromosome", []),
-        }
-        case["frontier"].append(entry)
+        case["frontier"].append(
+            {
+                "rank": rank,
+                "png_path": copy_asset(
+                    png_source,
+                    browser_case_asset_root / "frontier_levels" / f"frontier_{rank:02d}.png",
+                ),
+                "ascii_path": maybe_copy_text(
+                    ascii_source,
+                    browser_case_asset_root / "frontier_levels" / f"frontier_{rank:02d}.txt",
+                ),
+                "evaluation": item.get("individual", {}).get("evaluation", {}),
+                "constraints": item.get("individual", {}).get("constraints", {}),
+                "chromosome": item.get("individual", {}).get("chromosome", []),
+                "segment_metadata": item.get("individual", {}).get("segment_metadata", []),
+            }
+        )
     return case
+
+
+def build_compare_summary(cases: list[dict]) -> list[dict]:
+    rows = []
+    for case in cases:
+        rows.append(
+            {
+                "title": case["title"],
+                "objective_mode": case["objective_mode"],
+                "difficulty_error": case["evaluation"].get("difficulty_error"),
+                "emptiness_error": case["evaluation"].get("emptiness_error"),
+                "difficulty_curve_error": case["evaluation"].get("difficulty_curve_error"),
+                "family_balance": case["evaluation"].get("family_balance"),
+                "front_hv": case.get("final_front_hv"),
+                "front_spread": case.get("final_front_spread"),
+                "front_size": case.get("final_front_size"),
+            }
+        )
+    return rows
 
 
 def main() -> None:
@@ -106,27 +121,16 @@ def main() -> None:
         shutil.rmtree(ASSET_ROOT)
     ASSET_ROOT.mkdir(parents=True, exist_ok=True)
 
-    cases = []
-    for case_dir in sorted(SHOWCASE_ROOT.iterdir()):
-        if not case_dir.is_dir():
-            continue
-        if not (case_dir / "summary.json").exists():
-            continue
-        cases.append(build_case(case_dir))
-
+    cases = [build_case(label, case_dir) for label, case_dir in CASE_SOURCES]
     payload = {
         "project": "EA Lab A8 Mario PCG",
         "cases": cases,
+        "compare_summary": build_compare_summary(cases),
     }
+
     payload_text = json.dumps(payload, indent=2)
-    (BROWSER_ROOT / "browser_data.json").write_text(
-        payload_text + "\n",
-        encoding="utf-8",
-    )
-    (BROWSER_ROOT / "browser_data.js").write_text(
-        "window.BROWSER_DATA = " + payload_text + ";\n",
-        encoding="utf-8",
-    )
+    (BROWSER_ROOT / "browser_data.json").write_text(payload_text + "\n", encoding="utf-8")
+    (BROWSER_ROOT / "browser_data.js").write_text("window.BROWSER_DATA = " + payload_text + ";\n", encoding="utf-8")
     print("Browser data:", BROWSER_ROOT / "browser_data.json")
 
 

@@ -15,11 +15,25 @@
           <p class="subcopy">
             Browse representative Mario PCG runs, inspect frontier members, and compare the trade-off metrics behind each generated level.
           </p>
+          <p class="subcopy">
+            <a class="inline-link" href="../FINAL_DEMO_GUIDE_CN.md" target="_blank" rel="noreferrer">Open final demo guide</a>
+          </p>
         </div>
         <div id="case-list" class="case-list"></div>
       </aside>
 
       <main class="content">
+        <section class="hero-panel">
+          <div>
+            <p class="eyebrow">Mode Compare</p>
+            <h2>Objective Mode Snapshot</h2>
+            <p class="case-summary">
+              Compare the representative baseline, family-oriented, and pacing-oriented runs before inspecting each frontier in detail.
+            </p>
+          </div>
+          <div id="compare-grid" class="compare-grid"></div>
+        </section>
+
         <section class="hero-panel">
           <div>
             <p id="case-tag" class="eyebrow">Showcase Case</p>
@@ -55,6 +69,17 @@
           <div class="detail-box">
             <h3>Chromosome</h3>
             <pre id="selected-chromosome" class="detail-pre"></pre>
+          </div>
+        </section>
+
+        <section class="detail-panel">
+          <div class="detail-box">
+            <h3>Family Sequence</h3>
+            <pre id="selected-families" class="detail-pre"></pre>
+          </div>
+          <div class="detail-box">
+            <h3>Difficulty Tiers</h3>
+            <pre id="selected-tiers" class="detail-pre"></pre>
           </div>
         </section>
       </main>

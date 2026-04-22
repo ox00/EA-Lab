@@ -34,11 +34,17 @@ def _objective_vector(individual: Individual, objective_specs: Sequence[Tuple[st
 
 def _metric_point(individual: Individual, cfg: MarioConfig) -> tuple[float, float, float]:
     assert individual.evaluation is not None
-    if cfg.nsga2_objective_mode == "family_4obj":
+    if cfg.nsga2_objective_mode in {"family_4obj", "semantic_5obj"}:
         return (
             individual.evaluation.difficulty_error,
             individual.evaluation.emptiness_error,
             1.0 - individual.evaluation.family_balance,
+        )
+    if cfg.nsga2_objective_mode == "curve_4obj":
+        return (
+            individual.evaluation.difficulty_error,
+            individual.evaluation.emptiness_error,
+            individual.evaluation.difficulty_curve_error,
         )
     return (
         individual.evaluation.difficulty_error,
