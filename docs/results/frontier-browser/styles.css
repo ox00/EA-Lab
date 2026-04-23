@@ -115,11 +115,25 @@ body {
   gap: 12px;
 }
 
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.compare-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fff8ec 0%, #f3e4cb 100%);
+  border: 1px solid rgba(182, 161, 122, 0.28);
+}
+
 .metric-card {
   padding: 14px;
   border-radius: 14px;
   background: linear-gradient(145deg, #faf4e8 0%, #f3ead5 100%);
   border: 1px solid rgba(182, 161, 122, 0.28);
+  min-height: 92px;
 }
 
 .metric-label {
@@ -130,8 +144,9 @@ body {
 
 .metric-value {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
+  line-height: 1.2;
 }
 
 .viewer-grid {
@@ -176,6 +191,7 @@ body {
   margin: 0;
   color: var(--muted);
   font-size: 13px;
+  line-height: 1.45;
 }
 
 .detail-panel {

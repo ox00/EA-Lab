@@ -30,13 +30,18 @@ class EvaluationResult:
     structural_diversity: float
     emptiness: float
     emptiness_error: float
+    difficulty_curve_error: float = 0.0
+    family_balance: float = 0.0
 
     def as_objectives(self) -> Dict[str, float]:
         return {
+            "difficulty_score": self.difficulty_score,
             "difficulty_error": self.difficulty_error,
             "structural_diversity": self.structural_diversity,
             "emptiness_error": self.emptiness_error,
             "emptiness": self.emptiness,
+            "difficulty_curve_error": self.difficulty_curve_error,
+            "family_balance": self.family_balance,
         }
 
 

@@ -16,6 +16,7 @@ class MarioConfig:
     mutation_rate: float = 0.2
     generations: int = 10
     seed: int = 7
+    nsga2_objective_mode: str = "core_3obj"
 
     @property
     def width(self) -> int:

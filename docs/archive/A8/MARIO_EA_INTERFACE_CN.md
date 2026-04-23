@@ -1,9 +1,9 @@
 # Mario EA 对接接口说明（CN）
 
-本文件是 [MARIO_EA_INTERFACE.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE.md) 的中文归档版，供中文讨论、对齐和后续修改使用。
+本文件是 [MARIO_EA_INTERFACE.md](../../../docs/archive/A8/MARIO_EA_INTERFACE.md) 的中文归档版，供中文讨论、对齐和后续修改使用。
 
 当前建议：
-- 继续把 [MARIO_EA_INTERFACE.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE.md) 作为日常阅读版
+- 继续把 [MARIO_EA_INTERFACE.md](../../../docs/archive/A8/MARIO_EA_INTERFACE.md) 作为日常阅读版
 - 把本文件作为中文冻结副本
 - 把英文版作为 report / presentation / technical appendix 的正式素材来源
 
@@ -31,6 +31,6 @@ render(level: Level, path: str) -> None
 
 ## 使用建议
 如果你们需要快速开会对齐：
-- 先看 [MARIO_ALIGNMENT_ONE_PAGER.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_ALIGNMENT_ONE_PAGER.md)
-- 再看 [MARIO_EA_INTERFACE.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE.md)
-- 英文输出时参考 [MARIO_EA_INTERFACE_EN.md](/Users/liuzhicheng/1data/workspace2026/LN-projs/EA-Lab/sample/A8/MARIO_EA_INTERFACE_EN.md)
+- 先看 [MARIO_ALIGNMENT_ONE_PAGER.md](../../../docs/archive/A8/MARIO_ALIGNMENT_ONE_PAGER.md)
+- 再看 [MARIO_EA_INTERFACE.md](../../../docs/archive/A8/MARIO_EA_INTERFACE.md)
+- 英文输出时参考 [MARIO_EA_INTERFACE_EN.md](../../../docs/archive/A8/MARIO_EA_INTERFACE_EN.md)

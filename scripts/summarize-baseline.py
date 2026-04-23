@@ -42,6 +42,8 @@ def load_run(run_dir: Path) -> dict[str, float | int | bool | None]:
         "structural_diversity": evaluation.get("structural_diversity"),
         "emptiness_error": evaluation.get("emptiness_error"),
         "emptiness": evaluation.get("emptiness"),
+        "difficulty_curve_error": evaluation.get("difficulty_curve_error"),
+        "family_balance": evaluation.get("family_balance"),
         "best_is_feasible": bool(constraints.get("is_feasible")),
         "feasible_generations": summary.get("feasible_generations"),
         "last_feasible_ratio": last_log.get("feasible_ratio"),
@@ -59,6 +61,8 @@ def aggregate_runs(base_dir: Path, algorithm: str) -> dict[str, float | int | st
     diversity = [r["structural_diversity"] for r in records if isinstance(r["structural_diversity"], (float, int))]
     emptiness_error = [r["emptiness_error"] for r in records if isinstance(r["emptiness_error"], (float, int))]
     emptiness = [r["emptiness"] for r in records if isinstance(r["emptiness"], (float, int))]
+    difficulty_curve_error = [r["difficulty_curve_error"] for r in records if isinstance(r["difficulty_curve_error"], (float, int))]
+    family_balance = [r["family_balance"] for r in records if isinstance(r["family_balance"], (float, int))]
     best_feasible = [1.0 if r["best_is_feasible"] else 0.0 for r in records]
     feasible_generations = [
         float(r["feasible_generations"]) for r in records if isinstance(r["feasible_generations"], (float, int))
@@ -85,6 +89,8 @@ def aggregate_runs(base_dir: Path, algorithm: str) -> dict[str, float | int | st
         "std_best_emptiness_error": safe_std(emptiness_error),
         "avg_best_emptiness": safe_mean(emptiness),
         "std_best_emptiness": safe_std(emptiness),
+        "avg_best_difficulty_curve_error": safe_mean(difficulty_curve_error),
+        "avg_best_family_balance": safe_mean(family_balance),
         "best_feasible_ratio": safe_mean(best_feasible),
         "avg_feasible_generations": safe_mean(feasible_generations),
         "avg_last_feasible_ratio": safe_mean(last_feasible_ratio),
@@ -106,6 +112,8 @@ def write_csv(path: Path, rows: list[dict[str, float | int | str | None]]) -> No
         "std_best_emptiness_error",
         "avg_best_emptiness",
         "std_best_emptiness",
+        "avg_best_difficulty_curve_error",
+        "avg_best_family_balance",
         "best_feasible_ratio",
         "avg_feasible_generations",
         "avg_last_feasible_ratio",
@@ -137,6 +145,8 @@ def write_markdown(path: Path, rows: list[dict[str, float | int | str | None]]) 
         "avg_best_structural_diversity",
         "avg_best_emptiness_error",
         "avg_best_emptiness",
+        "avg_best_difficulty_curve_error",
+        "avg_best_family_balance",
         "best_feasible_ratio",
         "avg_last_first_front_size",
         "avg_last_first_front_hv",

@@ -3,6 +3,8 @@ import unittest
 from ea_lab.pcg.config import MarioConfig
 from ea_lab.pcg.ea import select_survivors
 from ea_lab.pcg.ea import top_k_feasible_frontier
+from ea_lab.pcg.evaluation import evaluate_level
+from ea_lab.pcg.decode import decode_chromosome
 from ea_lab.pcg.models import ConstraintResult
 from ea_lab.pcg.models import EvaluationResult
 from ea_lab.pcg.models import Individual
@@ -26,6 +28,8 @@ def feasible_individual(chromosome, difficulty_error, structural_diversity, empt
             structural_diversity=structural_diversity,
             emptiness=emptiness,
             emptiness_error=abs(emptiness - 0.45),
+            difficulty_curve_error=0.1,
+            family_balance=0.8,
         ),
     )
 
@@ -47,26 +51,39 @@ def infeasible_individual(chromosome, violations):
 
 
 class NsgaLiteTests(unittest.TestCase):
+    def test_evaluation_emits_v3_metrics(self) -> None:
+        cfg = MarioConfig()
+        chromosome = [0, 6, 4, 7, 10, 11, 13, 17]
+        level = decode_chromosome(chromosome, cfg)
+
+        result = evaluate_level(level, cfg, chromosome)
+
+        self.assertGreaterEqual(result.family_balance, 0.0)
+        self.assertLessEqual(result.family_balance, 1.0)
+        self.assertGreaterEqual(result.difficulty_curve_error, 0.0)
+
     def test_top_k_frontier_returns_only_first_front(self) -> None:
+        cfg = MarioConfig()
         population = [
             feasible_individual([1], 0.10, 0.50, 0.50),
             feasible_individual([2], 0.20, 0.90, 0.90),
             feasible_individual([3], 0.60, 0.40, 0.40),
         ]
 
-        frontier = top_k_feasible_frontier(population, 5)
+        frontier = top_k_feasible_frontier(population, 5, cfg)
 
         chromosomes = {tuple(individual.chromosome) for individual in frontier}
         self.assertEqual(chromosomes, {(1,), (2,)})
 
     def test_top_k_frontier_deduplicates_same_chromosome(self) -> None:
+        cfg = MarioConfig()
         population = [
             feasible_individual([1], 0.10, 0.50, 0.50),
             feasible_individual([1], 0.10, 0.50, 0.50),
             feasible_individual([2], 0.20, 0.90, 0.90),
         ]
 
-        frontier = top_k_feasible_frontier(population, 5)
+        frontier = top_k_feasible_frontier(population, 5, cfg)
 
         self.assertEqual([tuple(ind.chromosome) for ind in frontier], [(1,), (2,)])
 
@@ -83,6 +100,56 @@ class NsgaLiteTests(unittest.TestCase):
 
         self.assertTrue(all(individual.feasible for individual in survivors))
         self.assertEqual({tuple(ind.chromosome) for ind in survivors}, {(1,), (2,)})
+
+    def test_family_balance_objective_mode_changes_frontier_ordering(self) -> None:
+        base = feasible_individual([1], 0.10, 0.50, 0.50)
+        balance_rich = feasible_individual([2], 0.10, 0.50, 0.50)
+        balance_rich.evaluation.family_balance = 0.95
+
+        low_balance = feasible_individual([3], 0.10, 0.50, 0.50)
+        low_balance.evaluation.family_balance = 0.20
+
+        population = [base, balance_rich, low_balance]
+
+        frontier_core = top_k_feasible_frontier(population, 3, MarioConfig(nsga2_objective_mode="core_3obj"))
+        frontier_family = top_k_feasible_frontier(population, 3, MarioConfig(nsga2_objective_mode="family_4obj"))
+
+        self.assertEqual(len(frontier_core), 3)
+        self.assertEqual(tuple(frontier_family[0].chromosome), (2,))
+
+    def test_curve_objective_mode_prefers_lower_curve_error(self) -> None:
+        base = feasible_individual([1], 0.10, 0.50, 0.50)
+        smooth_curve = feasible_individual([2], 0.10, 0.50, 0.50)
+        smooth_curve.evaluation.difficulty_curve_error = 0.05
+
+        rough_curve = feasible_individual([3], 0.10, 0.50, 0.50)
+        rough_curve.evaluation.difficulty_curve_error = 0.80
+
+        population = [base, smooth_curve, rough_curve]
+
+        frontier_core = top_k_feasible_frontier(population, 3, MarioConfig(nsga2_objective_mode="core_3obj"))
+        frontier_curve = top_k_feasible_frontier(population, 3, MarioConfig(nsga2_objective_mode="curve_4obj"))
+
+        self.assertEqual(len(frontier_core), 3)
+        self.assertEqual(tuple(frontier_curve[0].chromosome), (2,))
+
+    def test_semantic_objective_mode_prefers_curve_and_family_tradeoff(self) -> None:
+        balanced_smooth = feasible_individual([1], 0.10, 0.50, 0.50)
+        balanced_smooth.evaluation.family_balance = 0.95
+        balanced_smooth.evaluation.difficulty_curve_error = 0.05
+
+        family_only = feasible_individual([2], 0.10, 0.50, 0.50)
+        family_only.evaluation.family_balance = 0.95
+        family_only.evaluation.difficulty_curve_error = 0.90
+
+        curve_only = feasible_individual([3], 0.10, 0.50, 0.50)
+        curve_only.evaluation.family_balance = 0.20
+        curve_only.evaluation.difficulty_curve_error = 0.05
+
+        population = [balanced_smooth, family_only, curve_only]
+        frontier_semantic = top_k_feasible_frontier(population, 3, MarioConfig(nsga2_objective_mode="semantic_5obj"))
+
+        self.assertEqual(tuple(frontier_semantic[0].chromosome), (1,))
 
 
 if __name__ == "__main__":

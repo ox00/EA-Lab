@@ -16,6 +16,7 @@ from .nsga2 import logs_as_dicts as nsga2_logs_as_dicts
 from .nsga2 import run_nsga2
 from .render import render_ascii
 from .render import render_pygame
+from .segments import chromosome_segment_metadata
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,6 +34,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output-dir", type=str, default="output/pcg/mvp")
     parser.add_argument("--algorithm", choices=["ea", "nsga2"], default="ea")
+    parser.add_argument(
+        "--nsga2-objective-mode",
+        choices=["core_3obj", "family_4obj", "curve_4obj", "semantic_5obj"],
+        default="core_3obj",
+    )
     parser.add_argument("--render-backend", choices=["ascii", "pygame", "both"], default="both")
     parser.add_argument("--tile-size", type=int, default=24)
     parser.add_argument("--top-k-frontier", type=int, default=5)
@@ -52,6 +58,7 @@ def build_config(args: argparse.Namespace) -> MarioConfig:
         mutation_rate=args.mutation_rate,
         generations=args.generations,
         seed=args.seed,
+        nsga2_objective_mode=args.nsga2_objective_mode,
     )
 
 
@@ -79,7 +86,9 @@ def write_artifacts(
     )
     summary = {
         "algorithm": algorithm,
+        "nsga2_objective_mode": cfg.nsga2_objective_mode if algorithm == "nsga2" else None,
         "best_chromosome": best_chromosome,
+        "best_segment_metadata": chromosome_segment_metadata(best_chromosome, cfg),
         "constraints": constraints,
         "evaluation": evaluation,
         "feasible_generations": sum(1 for log in logs if (log["feasible_ratio"] or 0) > 0),
@@ -102,8 +111,8 @@ def main() -> None:
 
     best = population[0]
     level = decode_chromosome(best.chromosome, cfg)
-    constraint_report = population_constraint_report(population)
-    frontier = top_k_feasible_frontier(population, args.top_k_frontier)
+    constraint_report = population_constraint_report(population, cfg)
+    frontier = top_k_feasible_frontier(population, args.top_k_frontier, cfg)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -125,7 +134,7 @@ def main() -> None:
         record: Dict[str, object] = {
             "rank": rank,
             "ascii_path": f"frontier_levels/{ascii_name}",
-            "individual": individual_as_log_dict(individual),
+            "individual": individual_as_log_dict(individual, cfg),
         }
         if args.render_backend in ("pygame", "both"):
             png_name = f"frontier_{rank:02d}.png"
@@ -150,10 +159,12 @@ def main() -> None:
 
     print("Output dir:", str(output_dir))
     print("Algorithm:", args.algorithm)
+    if args.algorithm == "nsga2":
+        print("NSGA-II objective mode:", cfg.nsga2_objective_mode)
     print("Best chromosome:", best.chromosome)
     print("Constraints:", best.constraints.as_log_dict())
     print("Evaluation:", best.evaluation.as_objectives() if best.evaluation else None)
-    print("Constraint report:", json.dumps(individual_as_log_dict(best), indent=2))
+    print("Constraint report:", json.dumps(individual_as_log_dict(best, cfg), indent=2))
     print("Frontier levels exported:", len(frontier_levels))
     print("Generations:", len(logs))
 
