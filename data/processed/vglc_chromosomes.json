@@ -1,0 +1,16 @@
+{
+  "config": {
+    "segment_width": 14,
+    "num_segments_max": 8,
+    "total_chromosomes": 1
+  },
+  "data": [
+    {
+      "source": "smb2j\\SuperMarioBros2(J)-World3-1.txt",
+      "chromosome": [
+        0
+      ],
+      "length": 1
+    }
+  ]
+}
