@@ -1,4 +1,4 @@
-﻿"""AI-based segment sequence generator."""
+"""AI-based segment sequence generator."""
 
 from .model import SegmentLSTM
 

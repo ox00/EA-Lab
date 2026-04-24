@@ -1,4 +1,4 @@
-﻿"""LSTM-based language model for segment ID sequences."""
+"""LSTM-based language model for segment ID sequences."""
 
 import torch
 import torch.nn as nn
