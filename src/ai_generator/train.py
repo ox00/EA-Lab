@@ -1,4 +1,4 @@
-﻿"""Train an LSTM language model on VGLC chromosome sequences."""
+"""Train an LSTM language model on VGLC chromosome sequences."""
 
 import json
 import argparse
