@@ -17,6 +17,10 @@ class MarioConfig:
     generations: int = 10
     seed: int = 7
     nsga2_objective_mode: str = "core_3obj"
+    init_mode: str = "random"
+    ai_seed_ratio: float = 0.5
+    ai_seed_temperature: float = 0.9
+    ai_seed_start_length: int = 3
 
     @property
     def width(self) -> int:

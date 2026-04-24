@@ -5,6 +5,7 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
+from .ai_seed import seeded_chromosome
 from .config import MarioConfig
 from .constraints import check_constraints
 from .decode import decode_chromosome
@@ -17,6 +18,17 @@ from .segments import chromosome_segment_metadata
 def random_chromosome(cfg: MarioConfig, rng: random.Random) -> Chromosome:
     segment_ids = list(build_segment_library(cfg).keys())
     return [rng.choice(segment_ids) for _ in range(cfg.num_segments)]
+
+
+def initial_population_chromosomes(cfg: MarioConfig, rng: random.Random) -> List[Chromosome]:
+    if cfg.init_mode != "ai_seeded":
+        return [random_chromosome(cfg, rng) for _ in range(cfg.population_size)]
+
+    ai_seed_count = min(cfg.population_size, max(1, round(cfg.population_size * cfg.ai_seed_ratio)))
+    chromosomes = [seeded_chromosome(cfg, rng) for _ in range(ai_seed_count)]
+    chromosomes.extend(random_chromosome(cfg, rng) for _ in range(cfg.population_size - ai_seed_count))
+    rng.shuffle(chromosomes)
+    return chromosomes
 
 
 def evaluate_chromosome(chromosome: Chromosome, cfg: MarioConfig) -> Individual:
@@ -310,7 +322,7 @@ def _metric_extrema(
 
 def run_minimal_ea(cfg: MarioConfig) -> Tuple[List[Individual], List[GenerationLog]]:
     rng = random.Random(cfg.seed)
-    population = [evaluate_chromosome(random_chromosome(cfg, rng), cfg) for _ in range(cfg.population_size)]
+    population = [evaluate_chromosome(chromosome, cfg) for chromosome in initial_population_chromosomes(cfg, rng)]
     logs: List[GenerationLog] = []
 
     for generation in range(cfg.generations):
@@ -368,6 +380,7 @@ def population_constraint_report(population: Sequence[Individual], cfg: MarioCon
     best_individual, best_front_size = _best_feasible_individual(population, cfg)
     return {
         "population_size": len(population),
+        "init_mode": cfg.init_mode,
         "feasible_count": len(feasible),
         "best_front_size": best_front_size,
         "violation_counts": _constraint_violation_counts(population),

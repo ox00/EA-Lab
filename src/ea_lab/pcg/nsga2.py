@@ -10,8 +10,8 @@ from .config import MarioConfig
 from .ea import crossover
 from .ea import evaluate_chromosome
 from .ea import get_objective_specs
+from .ea import initial_population_chromosomes
 from .ea import mutate
-from .ea import random_chromosome
 from .models import Individual
 
 
@@ -257,7 +257,7 @@ class Nsga2GenerationLog:
 
 def run_nsga2(cfg: MarioConfig) -> tuple[List[Individual], List[Nsga2GenerationLog]]:
     rng = random.Random(cfg.seed)
-    population = [evaluate_chromosome(random_chromosome(cfg, rng), cfg) for _ in range(cfg.population_size)]
+    population = [evaluate_chromosome(chromosome, cfg) for chromosome in initial_population_chromosomes(cfg, rng)]
     logs: List[Nsga2GenerationLog] = []
 
     for generation in range(cfg.generations):
