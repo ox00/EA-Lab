@@ -32,6 +32,12 @@ def maybe_copy_text(source: Path, target: Path) -> str | None:
     return copy_asset(source, target)
 
 
+def read_text_if_exists(source: Path) -> str | None:
+    if not source.exists():
+        return None
+    return source.read_text(encoding="utf-8")
+
+
 def build_case(label: str, case_dir: Path) -> dict:
     summary = load_json(case_dir / "summary.json")
     frontier = load_json(case_dir / "frontier_summary.json")
@@ -41,6 +47,7 @@ def build_case(label: str, case_dir: Path) -> dict:
     browser_case_asset_root = ASSET_ROOT / case_dir.name
     best_png_path = copy_asset(case_dir / "best_level.png", browser_case_asset_root / "best_level.png")
     best_txt_path = maybe_copy_text(case_dir / "best_level.txt", browser_case_asset_root / "best_level.txt")
+    best_txt_inline = read_text_if_exists(case_dir / "best_level.txt")
 
     case = {
         "id": case_dir.name,
@@ -62,6 +69,7 @@ def build_case(label: str, case_dir: Path) -> dict:
         "best_level": {
             "png_path": best_png_path,
             "ascii_path": best_txt_path,
+            "ascii_text": best_txt_inline,
             "chromosome": summary.get("best_chromosome", []),
             "segment_metadata": summary.get("best_segment_metadata", []),
         },
@@ -87,6 +95,7 @@ def build_case(label: str, case_dir: Path) -> dict:
                     ascii_source,
                     browser_case_asset_root / "frontier_levels" / f"frontier_{rank:02d}.txt",
                 ),
+                "ascii_text": read_text_if_exists(ascii_source),
                 "evaluation": item.get("individual", {}).get("evaluation", {}),
                 "constraints": item.get("individual", {}).get("constraints", {}),
                 "chromosome": item.get("individual", {}).get("chromosome", []),

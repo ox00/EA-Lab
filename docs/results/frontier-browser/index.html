@@ -50,6 +50,31 @@
               <a id="viewer-json-link" class="inline-link" href="#" target="_blank" rel="noreferrer">Open summary</a>
             </div>
             <img id="viewer-image" class="viewer-image" alt="Selected level render" />
+
+            <div class="play-shell">
+              <div class="play-header">
+                <div>
+                  <h3>Interactive Preview</h3>
+                  <p class="microcopy">
+                    Browser-side renderer with autoplay preview and a lightweight playable mode.
+                  </p>
+                </div>
+                <div class="play-controls">
+                  <button id="preview-autoplay" class="control-button" type="button">Auto-Scroll</button>
+                  <button id="preview-playable" class="control-button" type="button">Playable Lite</button>
+                  <button id="preview-reset" class="control-button ghost" type="button">Reset</button>
+                </div>
+              </div>
+
+              <div class="play-meta">
+                <span id="preview-mode-badge" class="mode-badge">Loading</span>
+                <span id="preview-hint" class="microcopy">Keys: `A/D` or arrow keys to move, `W / Space / Up` to jump.</span>
+              </div>
+
+              <div class="canvas-frame">
+                <canvas id="preview-canvas" width="960" height="320"></canvas>
+              </div>
+            </div>
           </div>
 
           <div class="frontier-card">
