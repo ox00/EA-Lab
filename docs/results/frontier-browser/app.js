@@ -1,10 +1,11 @@
 const state = {
   data: null,
+  litePhysicsPlans: null,
   selectedCaseIndex: 0,
   selectedFrontierIndex: null,
   asciiCache: new Map(),
   preview: {
-    mode: "autoplay",
+    mode: "physics",
     map: null,
     tileSize: 20,
     viewportWidth: 960,
@@ -15,6 +16,23 @@ const state = {
     lastTimestamp: null,
     actor: null,
     keys: new Set(),
+    maxJumpableGap: 3,
+    replayPath: [],
+    replayStepIndex: 0,
+    replayEdgeProgress: 0,
+    replayPause: 0,
+    physicsFrameDt: 1 / 30,
+    physicsRunSpeed: 150,
+    physicsJumpVelocity: -420,
+    physicsGravity: 600,
+    physicsMaxFallSpeed: 420,
+    physicsActionFrames: 4,
+    physicsPlan: [],
+    physicsPlanFound: false,
+    physicsPlanIndex: 0,
+    physicsActionFrame: 0,
+    physicsAccumulator: 0,
+    physicsPause: 0,
   },
 };
 
@@ -125,9 +143,45 @@ function renderCaseSummary(caseData) {
   buildMetricCards(caseData);
 }
 
+function renderEvidence(caseData) {
+  const evidence = document.getElementById("replay-evidence");
+  const planSummary = document.getElementById("physics-plan-summary");
+  const candidate = selectedCandidate(caseData);
+  const planRecord = currentPlanRecord(caseData);
+
+  evidence.textContent = [
+    "constraint-level evidence",
+    "- Reachability Replay uses the same tile-level reachable rule as the hard feasibility checker.",
+    "- It is aligned with the EA gate, but it does not model collision along the full jump trajectory.",
+    "",
+    "lite-physics-level evidence",
+    "- Lite Physics Replay searches an action sequence under lightweight collision rules.",
+    "- Pipes, walls, bricks, and question blocks can block the route.",
+    "- It is stronger than tile-level reachability, but still lighter than full Mario physics.",
+  ].join("\n");
+
+  if (!planRecord) {
+    planSummary.textContent = "No exported lite-physics plan found for this candidate.";
+    return;
+  }
+
+  planSummary.textContent = [
+    `candidate: ${caseData.id} / ${candidate.candidateId}`,
+    `label: ${candidate.label}`,
+    `plan_found: ${planRecord.plan_found}`,
+    `action_count: ${planRecord.action_count}`,
+    `estimated_seconds: ${planRecord.estimated_seconds}`,
+    `action_counts: ${formatJson(planRecord.action_counts)}`,
+    "",
+    "actions:",
+    (planRecord.actions || []).join(" "),
+  ].join("\n");
+}
+
 function selectedCandidate(caseData) {
   if (state.selectedFrontierIndex === null) {
     return {
+      candidateId: "best",
       label: "Best Level",
       imagePath: caseData.best_level.png_path,
       evaluation: caseData.evaluation,
@@ -141,6 +195,7 @@ function selectedCandidate(caseData) {
 
   const frontierItem = caseData.frontier[state.selectedFrontierIndex];
   return {
+    candidateId: `frontier_${frontierItem.rank}`,
     label: `Frontier Rank ${frontierItem.rank}`,
     imagePath: frontierItem.png_path,
     evaluation: frontierItem.evaluation,
@@ -150,6 +205,15 @@ function selectedCandidate(caseData) {
     asciiPath: frontierItem.ascii_path,
     asciiText: frontierItem.ascii_text,
   };
+}
+
+function currentPlanRecord(caseData) {
+  if (!state.litePhysicsPlans?.items) {
+    return null;
+  }
+  const candidate = selectedCandidate(caseData);
+  const key = `${caseData.id}::${candidate.candidateId}`;
+  return state.litePhysicsPlans.items.find((item) => item.key === key) || null;
 }
 
 function familySequence(segmentMetadata) {
@@ -188,6 +252,10 @@ function parseAsciiText(asciiText) {
     .map((line) => line.split(""));
 }
 
+function walkableTile(tile) {
+  return [".", "S", "G", "o"].includes(tile);
+}
+
 function solidTile(tile) {
   return ["#", "B", "?", "P"].includes(tile);
 }
@@ -198,42 +266,346 @@ function tileAt(map, col, row) {
   return map[row][col];
 }
 
-function spawnActor(map) {
-  let startCol = 1;
-  let startRow = map.length - 3;
+function standableAt(map, row, col) {
+  if (!map || row < 0 || row >= map.length - 1 || col < 0 || col >= map[0].length) {
+    return false;
+  }
+  return walkableTile(tileAt(map, col, row)) && solidTile(tileAt(map, col, row + 1));
+}
+
+function findTilePosition(map, target) {
+  if (!map) {
+    return null;
+  }
   for (let row = 0; row < map.length; row += 1) {
     for (let col = 0; col < map[row].length; col += 1) {
-      if (map[row][col] === "S") {
-        startCol = col;
-        startRow = row;
+      if (map[row][col] === target) {
+        return { row, col };
       }
     }
   }
+  return null;
+}
+
+function actorGeometry() {
   return {
-    x: startCol * state.preview.tileSize,
-    y: startRow * state.preview.tileSize - state.preview.tileSize * 0.8,
-    vx: 0,
-    vy: 0,
     width: state.preview.tileSize * 0.72,
     height: state.preview.tileSize * 0.9,
+  };
+}
+
+function actorPoseForNode(node) {
+  const { width, height } = actorGeometry();
+  return {
+    x: node.col * state.preview.tileSize + (state.preview.tileSize - width) / 2,
+    y: (node.row + 1) * state.preview.tileSize - height,
+    width,
+    height,
+  };
+}
+
+function candidateMaxJumpGap(caseData) {
+  return caseData?.config?.max_jumpable_gap ?? 3;
+}
+
+function nodeKey(node) {
+  return `${node.row}:${node.col}`;
+}
+
+function physicsStateKey(actor) {
+  return [
+    Math.round(actor.x / 6),
+    Math.round(actor.y / 6),
+    Math.round(actor.vx / 60),
+    Math.round(actor.vy / 60),
+    actor.onGround ? 1 : 0,
+  ].join("|");
+}
+
+function rebuildReplayPath(caseData) {
+  const map = state.preview.map;
+  state.preview.maxJumpableGap = candidateMaxJumpGap(caseData);
+  state.preview.replayPath = [];
+
+  const start = findTilePosition(map, "S");
+  const goal = findTilePosition(map, "G");
+  if (!start || !goal) {
+    return;
+  }
+  if (!standableAt(map, start.row, start.col) || !standableAt(map, goal.row, goal.col)) {
+    return;
+  }
+
+  const queue = [start];
+  const parents = new Map();
+  const visited = new Set([nodeKey(start)]);
+  let cursor = 0;
+
+  while (cursor < queue.length) {
+    const current = queue[cursor];
+    cursor += 1;
+
+    if (current.row === goal.row && current.col === goal.col) {
+      break;
+    }
+
+    for (const step of [-1, 1]) {
+      const next = { row: current.row, col: current.col + step };
+      const key = nodeKey(next);
+      if (standableAt(map, next.row, next.col) && !visited.has(key)) {
+        visited.add(key);
+        parents.set(key, current);
+        queue.push(next);
+      }
+    }
+
+    for (let jump = 1; jump <= state.preview.maxJumpableGap; jump += 1) {
+      for (const direction of [-1, 1]) {
+        const next = { row: current.row, col: current.col + direction * jump };
+        const key = nodeKey(next);
+        if (standableAt(map, next.row, next.col) && !visited.has(key)) {
+          visited.add(key);
+          parents.set(key, current);
+          queue.push(next);
+        }
+      }
+    }
+  }
+
+  const goalKey = nodeKey(goal);
+  if (!visited.has(goalKey)) {
+    return;
+  }
+
+  const path = [];
+  let current = goal;
+  while (current) {
+    path.push(current);
+    const parent = parents.get(nodeKey(current));
+    current = parent || null;
+  }
+
+  state.preview.replayPath = path.reverse();
+}
+
+function spawnReachabilityActor(map) {
+  const fallback = { row: map.length - 3, col: 1 };
+  const startNode = findTilePosition(map, "S") || fallback;
+  return {
+    ...actorPoseForNode(startNode),
+    vx: 0,
+    vy: 0,
+    onGround: true,
+  };
+}
+
+function spawnPhysicsActor(map) {
+  const fallback = { row: map.length - 3, col: 1 };
+  const startNode = findTilePosition(map, "S") || fallback;
+  const { width, height } = actorGeometry();
+  return {
+    x: startNode.col * state.preview.tileSize,
+    y: startNode.row * state.preview.tileSize - state.preview.tileSize * 0.8,
+    vx: 0,
+    vy: 0,
+    width,
+    height,
     onGround: false,
   };
+}
+
+function physicsActionInput(actionLabel, frameIndex) {
+  const jumpFrame = frameIndex === 0;
+  if (actionLabel === "RJ") {
+    return { moveLeft: false, moveRight: true, jump: jumpFrame };
+  }
+  if (actionLabel === "R" || actionLabel === "RR") {
+    return { moveLeft: false, moveRight: true, jump: false };
+  }
+  if (actionLabel === "J") {
+    return { moveLeft: false, moveRight: false, jump: jumpFrame };
+  }
+  return { moveLeft: false, moveRight: false, jump: false };
+}
+
+function physicsActionFrameLimit(actionLabel) {
+  return actionLabel === "RR" ? state.preview.physicsActionFrames * 2 : state.preview.physicsActionFrames;
+}
+
+function stepPhysicsActor(map, actor, input) {
+  const next = { ...actor };
+  next.vx = 0;
+
+  if (input.moveLeft) next.vx = -state.preview.physicsRunSpeed;
+  if (input.moveRight) next.vx = state.preview.physicsRunSpeed;
+
+  if (input.jump && next.onGround) {
+    next.vy = state.preview.physicsJumpVelocity;
+    next.onGround = false;
+  }
+
+  next.vy = Math.min(next.vy + state.preview.physicsGravity * state.preview.physicsFrameDt, state.preview.physicsMaxFallSpeed);
+
+  let nextX = next.x + next.vx * state.preview.physicsFrameDt;
+  let hit = intersectsSolid(map, next, nextX, next.y);
+  if (hit) {
+    if (next.vx > 0) {
+      nextX = hit.col * state.preview.tileSize - next.width;
+    } else if (next.vx < 0) {
+      nextX = (hit.col + 1) * state.preview.tileSize;
+    }
+    next.vx = 0;
+  }
+  next.x = Math.max(0, nextX);
+
+  let nextY = next.y + next.vy * state.preview.physicsFrameDt;
+  hit = intersectsSolid(map, next, next.x, nextY);
+  next.onGround = false;
+  if (hit) {
+    if (next.vy > 0) {
+      nextY = hit.row * state.preview.tileSize - next.height;
+      next.onGround = true;
+    } else {
+      nextY = (hit.row + 1) * state.preview.tileSize;
+    }
+    next.vy = 0;
+  }
+  next.y = nextY;
+  return next;
+}
+
+function settlePhysicsActor(map, actor) {
+  let current = { ...actor };
+  for (let step = 0; step < 40; step += 1) {
+    current = stepPhysicsActor(map, current, { moveLeft: false, moveRight: false, jump: false });
+    if (current.onGround) {
+      break;
+    }
+  }
+  return current;
+}
+
+function reconstructPhysicsPlan(node) {
+  const actions = [];
+  let current = node;
+  while (current && current.parent) {
+    actions.push(current.action);
+    current = current.parent;
+  }
+  return actions.reverse();
+}
+
+function buildLitePhysicsPlan() {
+  const map = state.preview.map;
+  state.preview.physicsPlan = [];
+  state.preview.physicsPlanFound = false;
+
+  if (!map) {
+    return;
+  }
+
+  const goal = findTilePosition(map, "G");
+  if (!goal) {
+    return;
+  }
+
+  const goalX = goal.col * state.preview.tileSize;
+  const startActor = settlePhysicsActor(map, spawnPhysicsActor(map));
+  const open = [{ priority: 0, cost: 0, actor: startActor, parent: null, action: null }];
+  const seen = new Map([[physicsStateKey(startActor), 0]]);
+  const actionLabels = ["R", "RJ", "RR", "N", "J"];
+  let expansions = 0;
+
+  while (open.length > 0 && expansions < 50000) {
+    let bestIndex = 0;
+    for (let index = 1; index < open.length; index += 1) {
+      if (open[index].priority < open[bestIndex].priority) {
+        bestIndex = index;
+      }
+    }
+
+    const current = open.splice(bestIndex, 1)[0];
+    if (current.actor.x >= goalX - 10) {
+      state.preview.physicsPlan = reconstructPhysicsPlan(current);
+      state.preview.physicsPlanFound = true;
+      return;
+    }
+
+    actionLabels.forEach((actionLabel) => {
+      let actor = current.actor;
+      for (let frame = 0; frame < physicsActionFrameLimit(actionLabel); frame += 1) {
+        actor = stepPhysicsActor(map, actor, physicsActionInput(actionLabel, frame));
+      }
+
+      if (actor.x < current.actor.x - 10) {
+        return;
+      }
+
+      const cost = current.cost + 1;
+      const key = physicsStateKey(actor);
+      if ((seen.get(key) ?? Number.POSITIVE_INFINITY) <= cost) {
+        return;
+      }
+
+      seen.set(key, cost);
+      const heuristic = Math.max(0, (goalX - actor.x) / 80);
+      open.push({
+        priority: cost + heuristic,
+        cost,
+        actor,
+        parent: current,
+        action: actionLabel,
+      });
+    });
+
+    expansions += 1;
+  }
 }
 
 function resetPreviewActor() {
   if (!state.preview.map) {
     return;
   }
-  state.preview.actor = spawnActor(state.preview.map);
+  if (state.preview.mode === "replay") {
+    state.preview.actor = spawnReachabilityActor(state.preview.map);
+  } else {
+    state.preview.actor = settlePhysicsActor(state.preview.map, spawnPhysicsActor(state.preview.map));
+  }
   state.preview.cameraX = 0;
+  state.preview.replayStepIndex = 0;
+  state.preview.replayEdgeProgress = 0;
+  state.preview.replayPause = 0;
+  state.preview.physicsPlanIndex = 0;
+  state.preview.physicsActionFrame = 0;
+  state.preview.physicsAccumulator = 0;
+  state.preview.physicsPause = 0;
 }
 
 function setPreviewMode(mode) {
   state.preview.mode = mode;
-  document.getElementById("preview-mode-badge").textContent = mode === "playable" ? "Playable Lite" : "Auto-Scroll";
+  const badge = document.getElementById("preview-mode-badge");
+  const hint = document.getElementById("preview-hint");
+  badge.textContent =
+    mode === "playable"
+      ? "Playable Lite"
+      : mode === "physics"
+        ? "Lite Physics Replay"
+        : mode === "replay"
+          ? "Reachability Replay"
+          : "Auto-Scroll";
+  hint.textContent =
+    mode === "playable"
+      ? "Keys: A/D or arrow keys to move, W / Space / Up to jump. Uses the same lite physics as the replay planner."
+      : mode === "physics"
+        ? "Action-level replay with pipe and wall collision under lightweight browser physics."
+      : mode === "replay"
+        ? "Tile-level reachable path from the hard constraint model. Fast, but less realistic."
+        : "Camera sweep preview for fast browsing. Use Lite Physics Replay for the stronger pass-through demo.";
   document.getElementById("preview-autoplay").classList.toggle("active", mode === "autoplay");
+  document.getElementById("preview-replay").classList.toggle("active", mode === "replay");
+  document.getElementById("preview-physics").classList.toggle("active", mode === "physics");
   document.getElementById("preview-playable").classList.toggle("active", mode === "playable");
-  if (mode === "playable") {
+  if (mode === "playable" || mode === "replay" || mode === "physics") {
     resetPreviewActor();
   }
 }
@@ -362,6 +734,16 @@ function intersectsSolid(map, actor, nextX, nextY) {
   return null;
 }
 
+function updateCameraFromActor() {
+  const map = state.preview.map;
+  const actor = state.preview.actor;
+  if (!map || !actor) {
+    return;
+  }
+  const maxCamera = Math.max(0, map[0].length * state.preview.tileSize - state.preview.viewportWidth);
+  state.preview.cameraX = Math.max(0, Math.min(maxCamera, actor.x - state.preview.viewportWidth * 0.35));
+}
+
 function updatePlayable(dt) {
   const map = state.preview.map;
   const actor = state.preview.actor;
@@ -371,47 +753,112 @@ function updatePlayable(dt) {
   const moveRight = state.preview.keys.has("ArrowRight") || state.preview.keys.has("d") || state.preview.keys.has("D");
   const jump = state.preview.keys.has("ArrowUp") || state.preview.keys.has("w") || state.preview.keys.has("W") || state.preview.keys.has(" ");
 
-  actor.vx = 0;
-  const runSpeed = 150;
-  if (moveLeft) actor.vx = -runSpeed;
-  if (moveRight) actor.vx = runSpeed;
-
-  if (jump && actor.onGround) {
-    actor.vy = -255;
-    actor.onGround = false;
+  state.preview.physicsAccumulator += dt;
+  while (state.preview.physicsAccumulator >= state.preview.physicsFrameDt) {
+    state.preview.actor = stepPhysicsActor(map, state.preview.actor, { moveLeft, moveRight, jump });
+    state.preview.physicsAccumulator -= state.preview.physicsFrameDt;
   }
 
-  actor.vy += 520 * dt;
-  actor.vy = Math.min(actor.vy, 320);
+  updateCameraFromActor();
+}
 
-  let nextX = actor.x + actor.vx * dt;
-  let hit = intersectsSolid(map, actor, nextX, actor.y);
-  if (hit) {
-    if (actor.vx > 0) {
-      nextX = hit.col * state.preview.tileSize - actor.width;
-    } else if (actor.vx < 0) {
-      nextX = (hit.col + 1) * state.preview.tileSize;
+function updateReplay(dt) {
+  const path = state.preview.replayPath;
+  if (!path.length) {
+    updateAutoplay(dt);
+    return;
+  }
+
+  if (path.length === 1) {
+    const pose = actorPoseForNode(path[0]);
+    state.preview.actor = { ...state.preview.actor, ...pose, vx: 0, vy: 0, onGround: true };
+    return;
+  }
+
+  if (state.preview.replayStepIndex >= path.length - 1) {
+    state.preview.replayPause += dt;
+    const finalPose = actorPoseForNode(path[path.length - 1]);
+    state.preview.actor = { ...state.preview.actor, ...finalPose, vx: 0, vy: 0, onGround: true };
+    if (state.preview.replayPause >= 1.15) {
+      resetPreviewActor();
     }
-    actor.vx = 0;
-  }
-  actor.x = Math.max(0, nextX);
+  } else {
+    const fromNode = path[state.preview.replayStepIndex];
+    const toNode = path[state.preview.replayStepIndex + 1];
+    const fromPose = actorPoseForNode(fromNode);
+    const toPose = actorPoseForNode(toNode);
+    const deltaCols = Math.abs(toNode.col - fromNode.col);
+    const isJump = deltaCols > 1;
+    const duration = isJump ? 0.24 + deltaCols * 0.08 : 0.12;
 
-  let nextY = actor.y + actor.vy * dt;
-  hit = intersectsSolid(map, actor, actor.x, nextY);
-  actor.onGround = false;
-  if (hit) {
-    if (actor.vy > 0) {
-      nextY = hit.row * state.preview.tileSize - actor.height;
-      actor.onGround = true;
-    } else {
-      nextY = (hit.row + 1) * state.preview.tileSize;
+    state.preview.replayEdgeProgress += dt / duration;
+    let t = state.preview.replayEdgeProgress;
+
+    if (t >= 1) {
+      state.preview.replayStepIndex += 1;
+      state.preview.replayEdgeProgress = 0;
+      t = 1;
     }
-    actor.vy = 0;
-  }
-  actor.y = nextY;
 
-  const maxCamera = Math.max(0, map[0].length * state.preview.tileSize - state.preview.viewportWidth);
-  state.preview.cameraX = Math.max(0, Math.min(maxCamera, actor.x - state.preview.viewportWidth * 0.35));
+    const x = fromPose.x + (toPose.x - fromPose.x) * t;
+    let y = fromPose.y + (toPose.y - fromPose.y) * t;
+    if (isJump) {
+      const hopHeight = state.preview.tileSize * (0.95 + 0.35 * (deltaCols - 2 >= 0 ? deltaCols - 2 : 0));
+      y -= Math.sin(Math.PI * t) * hopHeight;
+    }
+
+    state.preview.actor = {
+      ...state.preview.actor,
+      x,
+      y,
+      width: fromPose.width,
+      height: fromPose.height,
+      vx: 0,
+      vy: 0,
+      onGround: !isJump || t >= 0.98,
+    };
+  }
+
+  updateCameraFromActor();
+}
+
+function updatePhysicsReplay(dt) {
+  const map = state.preview.map;
+  const actor = state.preview.actor;
+  if (!map || !actor) {
+    return;
+  }
+
+  if (!state.preview.physicsPlanFound || state.preview.physicsPlan.length === 0) {
+    updateAutoplay(dt);
+    return;
+  }
+
+  state.preview.physicsAccumulator += dt;
+  while (state.preview.physicsAccumulator >= state.preview.physicsFrameDt) {
+    if (state.preview.physicsPlanIndex >= state.preview.physicsPlan.length) {
+      state.preview.physicsPause += state.preview.physicsFrameDt;
+      if (state.preview.physicsPause >= 1.15) {
+        resetPreviewActor();
+      }
+      state.preview.physicsAccumulator -= state.preview.physicsFrameDt;
+      continue;
+    }
+
+    const actionLabel = state.preview.physicsPlan[state.preview.physicsPlanIndex];
+    const input = physicsActionInput(actionLabel, state.preview.physicsActionFrame);
+    state.preview.actor = stepPhysicsActor(map, state.preview.actor, input);
+    state.preview.physicsActionFrame += 1;
+
+    if (state.preview.physicsActionFrame >= physicsActionFrameLimit(actionLabel)) {
+      state.preview.physicsActionFrame = 0;
+      state.preview.physicsPlanIndex += 1;
+    }
+
+    state.preview.physicsAccumulator -= state.preview.physicsFrameDt;
+  }
+
+  updateCameraFromActor();
 }
 
 function updateAutoplay(dt) {
@@ -462,7 +909,7 @@ function drawPreview() {
     }
   }
 
-  if (state.preview.mode === "playable" && state.preview.actor) {
+  if ((state.preview.mode === "playable" || state.preview.mode === "replay" || state.preview.mode === "physics") && state.preview.actor) {
     drawActor(ctx, state.preview.actor, state.preview.cameraX);
   } else {
     const markerX = 80;
@@ -480,6 +927,10 @@ function animationStep(timestamp) {
 
   if (state.preview.mode === "playable") {
     updatePlayable(dt);
+  } else if (state.preview.mode === "physics") {
+    updatePhysicsReplay(dt);
+  } else if (state.preview.mode === "replay") {
+    updateReplay(dt);
   } else {
     updateAutoplay(dt);
   }
@@ -504,6 +955,8 @@ async function updatePreview(caseData) {
   const candidate = selectedCandidate(caseData);
   const map = candidate.asciiText ? parseAsciiText(candidate.asciiText) : await loadAsciiMap(candidate.asciiPath);
   state.preview.map = map;
+  rebuildReplayPath(caseData);
+  buildLitePhysicsPlan();
   resetPreviewActor();
   startPreviewLoop();
   drawPreview();
@@ -538,6 +991,7 @@ function renderViewer(caseData) {
   selectedChromosome.textContent = formatJson(candidate.chromosome);
   selectedFamilies.textContent = familySequence(candidate.segmentMetadata).join(" -> ");
   selectedTiers.textContent = tierSequence(candidate.segmentMetadata).join(" -> ");
+  renderEvidence(caseData);
 
   updatePreview(caseData).catch((error) => {
     document.getElementById("preview-mode-badge").textContent = "Preview Error";
@@ -585,6 +1039,14 @@ function bindPreviewControls() {
     setPreviewMode("autoplay");
   });
 
+  document.getElementById("preview-replay").addEventListener("click", () => {
+    setPreviewMode("replay");
+  });
+
+  document.getElementById("preview-physics").addEventListener("click", () => {
+    setPreviewMode("physics");
+  });
+
   document.getElementById("preview-playable").addEventListener("click", () => {
     setPreviewMode("playable");
   });
@@ -609,7 +1071,8 @@ function bindPreviewControls() {
 
 async function boot() {
   bindPreviewControls();
-  setPreviewMode("autoplay");
+  setPreviewMode("physics");
+  state.litePhysicsPlans = window.LITE_PHYSICS_PLANS || null;
 
   if (window.BROWSER_DATA) {
     state.data = window.BROWSER_DATA;

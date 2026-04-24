@@ -249,6 +249,12 @@ body {
   margin-bottom: 16px;
 }
 
+.link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .inline-link {
   color: var(--accent-2);
   text-decoration: none;

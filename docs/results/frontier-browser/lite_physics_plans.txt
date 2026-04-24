@@ -1,0 +1,59 @@
+Lite Physics Replay Export
+
+This artifact records collision-aware action plans under the browser replay physics.
+Constraint-level reachable replay and lite-physics replay are intentionally different evidence layers.
+
+Physics spec:
+- frame_dt: 0.03333333333333333
+- tile_size: 20
+- actor_width_ratio: 0.72
+- actor_height_ratio: 0.9
+- run_speed: 150
+- jump_velocity: -420
+- gravity: 600
+- max_fall_speed: 420
+- action_frames: 4
+- goal_tolerance_px: 10
+- max_expansions: 50000
+
+[core_3obj_seed7] core baseline
+- best: OK, actions=60, seconds=15.067
+  actions: J N RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RJ RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR
+- frontier_1: OK, actions=60, seconds=15.067
+  actions: J N RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RJ RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR
+- frontier_2: OK, actions=62, seconds=15.333
+  actions: J N RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR R RJ RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR R
+- frontier_3: OK, actions=62, seconds=15.2
+  actions: J N RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR R RJ RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR N RR RR RR RR RJ RR RR RR RJ RR RR RR RR RR RR
+- frontier_4: OK, actions=61, seconds=15.067
+  actions: J N RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR R RJ RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR R
+- frontier_5: OK, actions=60, seconds=14.933
+  actions: J N RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR R RJ RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR
+
+[family_4obj_seed27] family showcase
+- best: OK, actions=57, seconds=14.667
+  actions: RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR
+- frontier_1: OK, actions=57, seconds=14.667
+  actions: RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR
+- frontier_2: OK, actions=59, seconds=15.2
+  actions: RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ N RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR
+- frontier_3: OK, actions=58, seconds=14.933
+  actions: RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR J RR RR RR RR RR RR RR RR RR RR RR RR RR R
+- frontier_4: OK, actions=58, seconds=14.8
+  actions: RR RR RR RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR
+- frontier_5: OK, actions=57, seconds=14.667
+  actions: RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR
+
+[curve_4obj_seed27] curve showcase
+- best: OK, actions=57, seconds=14.533
+  actions: RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR R
+- frontier_1: OK, actions=57, seconds=14.533
+  actions: RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR R
+- frontier_2: OK, actions=59, seconds=15.2
+  actions: RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR R
+- frontier_3: OK, actions=57, seconds=14.533
+  actions: RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR R
+- frontier_4: OK, actions=56, seconds=14.533
+  actions: RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR RR
+- frontier_5: OK, actions=58, seconds=14.933
+  actions: RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR RR RJ RR RR RR RR RR RR RR RR RR RR RR RR RR R

@@ -61,6 +61,8 @@
                 </div>
                 <div class="play-controls">
                   <button id="preview-autoplay" class="control-button" type="button">Auto-Scroll</button>
+                  <button id="preview-replay" class="control-button" type="button">Reachability Replay</button>
+                  <button id="preview-physics" class="control-button" type="button">Lite Physics Replay</button>
                   <button id="preview-playable" class="control-button" type="button">Playable Lite</button>
                   <button id="preview-reset" class="control-button ghost" type="button">Reset</button>
                 </div>
@@ -68,7 +70,9 @@
 
               <div class="play-meta">
                 <span id="preview-mode-badge" class="mode-badge">Loading</span>
-                <span id="preview-hint" class="microcopy">Keys: `A/D` or arrow keys to move, `W / Space / Up` to jump.</span>
+                <span id="preview-hint" class="microcopy">
+                  Reachability Replay follows the simplified feasible-path rule; Lite Physics Replay adds collision-aware action planning.
+                </span>
               </div>
 
               <div class="canvas-frame">
@@ -107,10 +111,28 @@
             <pre id="selected-tiers" class="detail-pre"></pre>
           </div>
         </section>
+
+        <section class="detail-panel">
+          <div class="detail-box">
+            <h3>Replay Evidence Levels</h3>
+            <pre id="replay-evidence" class="detail-pre"></pre>
+          </div>
+          <div class="detail-box">
+            <div class="viewer-header">
+              <h3>Lite Physics Plan</h3>
+              <div class="link-row">
+                <a id="physics-plan-json-link" class="inline-link" href="./lite_physics_plans.json" target="_blank" rel="noreferrer">JSON</a>
+                <a id="physics-plan-text-link" class="inline-link" href="./lite_physics_plans.txt" target="_blank" rel="noreferrer">TXT</a>
+              </div>
+            </div>
+            <pre id="physics-plan-summary" class="detail-pre"></pre>
+          </div>
+        </section>
       </main>
     </div>
 
     <script src="./browser_data.js" defer></script>
+    <script src="./lite_physics_plans.js" defer></script>
     <script src="./app.js" defer></script>
   </body>
 </html>
