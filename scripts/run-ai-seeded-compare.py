@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run_once(args: argparse.Namespace, init_mode: str, seed: int, run_dir: Path) -> None:
+def run_once(args: argparse.Namespace, init_mode: str, seed: int, run_dir: Path, repair: bool = False) -> None:
     env = os.environ.copy()
     env["PYTHONPATH"] = "src"
     cmd = [
@@ -48,6 +48,8 @@ def run_once(args: argparse.Namespace, init_mode: str, seed: int, run_dir: Path)
         "--output-dir",
         str(run_dir),
     ]
+    if repair:
+        cmd.append("--ai-seed-repair")
     subprocess.run(cmd, cwd=Path(__file__).resolve().parent.parent, env=env, check=True)
 
 
@@ -58,6 +60,7 @@ def load_run(run_dir: Path) -> dict[str, float | int | str | None]:
     last_log = logs[-1] if logs else {}
     return {
         "init_mode": summary.get("init_mode"),
+        "ai_seed_repair": summary.get("ai_seed_repair"),
         "difficulty_error": evaluation.get("difficulty_error"),
         "structural_diversity": evaluation.get("structural_diversity"),
         "emptiness_error": evaluation.get("emptiness_error"),
@@ -131,13 +134,18 @@ def main() -> None:
     output_root.mkdir(parents=True, exist_ok=True)
 
     rows = []
-    for init_mode in ["random", "ai_seeded"]:
+    compare_modes = [
+        ("random", False, "random"),
+        ("ai_seeded", False, "ai_seeded"),
+        ("ai_seeded", True, "ai_seeded_repaired"),
+    ]
+    for init_mode, repair, label in compare_modes:
         records = []
         for seed in args.seeds:
-            run_dir = output_root / f"{init_mode}_seed{seed}"
-            run_once(args, init_mode, seed, run_dir)
+            run_dir = output_root / f"{label}_seed{seed}"
+            run_once(args, init_mode, seed, run_dir, repair=repair)
             records.append(load_run(run_dir))
-        rows.append(aggregate(init_mode, records))
+        rows.append(aggregate(label, records))
 
     (output_root / "compare_summary.json").write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
     write_markdown(output_root / "compare_summary.md", rows)

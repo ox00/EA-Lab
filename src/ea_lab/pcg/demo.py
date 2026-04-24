@@ -43,6 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ai-seed-ratio", type=float, default=0.5)
     parser.add_argument("--ai-seed-temperature", type=float, default=0.9)
     parser.add_argument("--ai-seed-start-length", type=int, default=3)
+    parser.add_argument("--ai-seed-repair", action="store_true")
     parser.add_argument("--render-backend", choices=["ascii", "pygame", "both"], default="both")
     parser.add_argument("--tile-size", type=int, default=24)
     parser.add_argument("--top-k-frontier", type=int, default=5)
@@ -67,6 +68,7 @@ def build_config(args: argparse.Namespace) -> MarioConfig:
         ai_seed_ratio=args.ai_seed_ratio,
         ai_seed_temperature=args.ai_seed_temperature,
         ai_seed_start_length=args.ai_seed_start_length,
+        ai_seed_repair=args.ai_seed_repair,
     )
 
 
@@ -96,6 +98,7 @@ def write_artifacts(
         "algorithm": algorithm,
         "nsga2_objective_mode": cfg.nsga2_objective_mode if algorithm == "nsga2" else None,
         "init_mode": cfg.init_mode,
+        "ai_seed_repair": cfg.ai_seed_repair,
         "best_chromosome": best_chromosome,
         "best_segment_metadata": chromosome_segment_metadata(best_chromosome, cfg),
         "constraints": constraints,
@@ -171,6 +174,7 @@ def main() -> None:
     if args.algorithm == "nsga2":
         print("NSGA-II objective mode:", cfg.nsga2_objective_mode)
     print("Init mode:", cfg.init_mode)
+    print("AI seed repair:", cfg.ai_seed_repair)
     print("Best chromosome:", best.chromosome)
     print("Constraints:", best.constraints.as_log_dict())
     print("Evaluation:", best.evaluation.as_objectives() if best.evaluation else None)

@@ -21,6 +21,7 @@ class MarioConfig:
     ai_seed_ratio: float = 0.5
     ai_seed_temperature: float = 0.9
     ai_seed_start_length: int = 3
+    ai_seed_repair: bool = False
 
     @property
     def width(self) -> int:

@@ -2,6 +2,7 @@ import random
 import unittest
 
 from ea_lab.pcg.ai_seed import adapt_ai_chromosome
+from ea_lab.pcg.ai_seed import repair_ai_chromosome
 from ea_lab.pcg.ai_seed import seeded_chromosome
 from ea_lab.pcg.config import MarioConfig
 from ea_lab.pcg.ea import initial_population_chromosomes
@@ -35,6 +36,16 @@ class AiSeedTests(unittest.TestCase):
 
         self.assertEqual(len(chromosome), cfg.num_segments)
         self.assertTrue(all(segment_id in valid_ids for segment_id in chromosome))
+
+    def test_repair_ai_chromosome_preserves_valid_domain(self) -> None:
+        cfg = MarioConfig(num_segments=8, ai_seed_repair=True)
+        rng = random.Random(7)
+        valid_ids = set(build_segment_library(cfg).keys())
+
+        repaired = repair_ai_chromosome([1, 1, 1, 1, 1, 1, 1, 1], cfg, rng)
+
+        self.assertEqual(len(repaired), cfg.num_segments)
+        self.assertTrue(all(segment_id in valid_ids for segment_id in repaired))
 
     def test_initial_population_ai_seeded_mode_mixes_population(self) -> None:
         cfg = MarioConfig(population_size=10, num_segments=8, init_mode="ai_seeded", ai_seed_ratio=0.6)

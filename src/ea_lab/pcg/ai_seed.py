@@ -10,8 +10,11 @@ import torch
 from ai_generator.model import SegmentLSTM
 
 from .config import MarioConfig
+from .constraints import check_constraints
+from .decode import decode_chromosome
 from .models import Chromosome
 from .segments import build_segment_library
+from .segments import build_segment_spec_library
 
 
 def _repo_root() -> Path:
@@ -52,7 +55,8 @@ def adapt_ai_chromosome(
 
 def sample_processed_seed(cfg: MarioConfig, rng: random.Random) -> Chromosome:
     sequences = _load_processed_sequences()
-    return adapt_ai_chromosome(rng.choice(sequences), cfg, rng)
+    chromosome = adapt_ai_chromosome(rng.choice(sequences), cfg, rng)
+    return repair_ai_chromosome(chromosome, cfg, rng) if cfg.ai_seed_repair else chromosome
 
 
 def _load_lstm_checkpoint() -> dict:
@@ -87,7 +91,59 @@ def sample_lstm_seed(cfg: MarioConfig, rng: random.Random) -> Chromosome:
         temperature=cfg.ai_seed_temperature,
         device=torch.device("cpu"),
     )
-    return adapt_ai_chromosome(generated, cfg, rng)
+    chromosome = adapt_ai_chromosome(generated, cfg, rng)
+    return repair_ai_chromosome(chromosome, cfg, rng) if cfg.ai_seed_repair else chromosome
+
+
+def _repair_candidate_ids(cfg: MarioConfig) -> list[int]:
+    library = build_segment_spec_library(cfg)
+    preferred = []
+    fallback = []
+    for segment_id, spec in library.items():
+        if spec.family in {"flat_safe", "reward_relief", "pipe_pressure"}:
+            preferred.append(segment_id)
+        else:
+            fallback.append(segment_id)
+    return preferred + fallback
+
+
+def repair_ai_chromosome(chromosome: Chromosome, cfg: MarioConfig, rng: random.Random) -> Chromosome:
+    child = chromosome[:]
+    constraints = check_constraints(decode_chromosome(child, cfg), cfg)
+    if constraints.is_feasible:
+        return child
+
+    candidate_ids = _repair_candidate_ids(cfg)
+
+    for _ in range(cfg.num_segments * 3):
+        if constraints.reachable:
+            break
+        updated = False
+        for idx, segment_id in enumerate(child):
+            spec = build_segment_spec_library(cfg)[segment_id]
+            if spec.family == "gap_jump":
+                child[idx] = 0
+                updated = True
+                break
+        if not updated:
+            replace_idx = rng.randrange(len(child))
+            child[replace_idx] = candidate_ids[0]
+        constraints = check_constraints(decode_chromosome(child, cfg), cfg)
+        if constraints.is_feasible:
+            return child
+
+    for _ in range(cfg.num_segments * 6):
+        idx = rng.randrange(len(child))
+        replacement = candidate_ids[rng.randrange(min(8, len(candidate_ids)))]
+        old_value = child[idx]
+        child[idx] = replacement
+        constraints = check_constraints(decode_chromosome(child, cfg), cfg)
+        if constraints.is_feasible:
+            return child
+        if constraints.violation_count > 1:
+            child[idx] = old_value
+
+    return child
 
 
 def seeded_chromosome(cfg: MarioConfig, rng: random.Random) -> Chromosome:
