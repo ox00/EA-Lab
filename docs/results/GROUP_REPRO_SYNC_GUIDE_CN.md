@@ -1,7 +1,7 @@
 # 组内复现与同步说明（CN）
 
 ## 1. 这份文档是给谁看的
-这份文档主要给项目组同学使用。
+这份文档主要给项目组使用。
 
 目标不是讲完整技术细节，而是帮助大家快速完成三件事：
 
@@ -20,7 +20,7 @@
 
 - 最终汇报材料整理
 - PPT 制作
-- 演示彩排
+- 演示准备
 - 少量展示层 polish
 
 而不是继续大规模改算法。
@@ -195,16 +195,11 @@ python3 scripts/build-frontier-browser-data.py
 ## 8. 当前项目中 AI 模块怎么理解
 仓库里已经有 AI generator 模块和 AI seeded integration。
 
-但从当前课程项目主线看，最稳的理解方式是：
+但从当前课程项目主线看，理解方式是：
 
 - 主线系统仍然是 `explicit genotype + hard constraints + EA / NSGA-II`
-- AI 更像是“上游 seed initialization 扩展能力”
-- 不是最终主展示的唯一核心
-
-所以组内同步时不要把项目误解成“一个纯 AI 生成项目”。
-
-更准确的表达应该是：
-
+- AI 是“上游 seed initialization 扩展能力”
+- 
 `这是一个以 EA / MOO 为核心的 Mario PCG 项目，AI 模块是可以接入的上游增强能力。`
 
 ## 9. 组内分工视角怎么对齐
@@ -219,9 +214,8 @@ python3 scripts/build-frontier-browser-data.py
 4. 汇报表达层
    - report / demo guide / ppt materials
 
-这样分层以后，同学更容易知道自己负责部分处在整个项目中的什么位置。
 
-## 10. 当前最值得同学重点阅读的文件
+## 10. 当前最值得重点阅读的文件
 如果时间有限，优先看下面这些：
 
 1. `docs/results/FINAL_DEMO_GUIDE_CN.md`
@@ -245,7 +239,7 @@ python3 scripts/build-frontier-browser-data.py
 
 它们的作用不是单纯“好看”，而是增强最终演示的可信度与可解释性。
 
-## 12. 如果同学只需要项目同步结论，可以直接记住这几句
+## 12. 如果同学只需要同步结论，重点这几句
 ### 项目定位
 `这是一个以 explicit genotype、hard constraints 和 multi-objective EA / NSGA-II 为核心的 Mario PCG 项目。`
 
@@ -261,7 +255,7 @@ python3 scripts/build-frontier-browser-data.py
 ## 13. 当前阶段建议组内怎么协作
 建议按照下面方式推进：
 
-1. 所有人先统一阅读最终演示说明与浏览器展示
+1. 建议先统一阅读最终演示说明与浏览器展示
 2. 再根据分工补 PPT / 报告 / 彩排材料
 3. 非必要不要继续引入大规模算法改动
 4. 如果要补内容，优先补展示、表达和截图质量
@@ -271,4 +265,4 @@ python3 scripts/build-frontier-browser-data.py
 
 组内同步最重要的是先建立一个共同认知：
 
-`我们已经有一个完整的课程项目主线，后面工作的重点是把它讲清楚、演示好，而不是再重新定义项目。`
+`我们已经有一个完整的课程项目主线，后面工作的重点是把它讲清楚、演示好，不再重新定义项目。`
