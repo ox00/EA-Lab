@@ -6,12 +6,13 @@ This directory stores the formal project documents for `EA-Lab`.
 
 If you want to understand the current Mario PCG project quickly, read in this order:
 
-1. [Final Demo Guide](results/FINAL_DEMO_GUIDE_CN.md)
-2. [A8 Analysis Index](analysis/A8/analysis.md)
-3. [Mario Pipeline Diagram](analysis/A8/MARIO_PCG_PIPELINE_DIAGRAM.md)
-4. [Mario EA Interface EN](analysis/A8/MARIO_EA_INTERFACE_EN.md)
-5. [Report Working Draft](analysis/A8/REPORT_WORKING_DRAFT.md)
-6. [Frontier Browser](results/frontier-browser/index.html)
+1. [Group Repro Sync Guide](results/GROUP_REPRO_SYNC_GUIDE_CN.md)
+2. [Final Demo Guide](results/FINAL_DEMO_GUIDE_CN.md)
+3. [A8 Analysis Index](analysis/A8/analysis.md)
+4. [Mario Pipeline Diagram](analysis/A8/MARIO_PCG_PIPELINE_DIAGRAM.md)
+5. [Mario EA Interface EN](analysis/A8/MARIO_EA_INTERFACE_EN.md)
+6. [Report Working Draft](analysis/A8/REPORT_WORKING_DRAFT.md)
+7. [Frontier Browser](results/frontier-browser/index.html)
 
 ## Directory Guide
 
@@ -34,9 +35,10 @@ Key experiment reviews:
 Project outputs and milestone-facing materials.
 
 Recommended entry points:
-1. [Final Demo Guide](results/FINAL_DEMO_GUIDE_CN.md)
-2. [Frontier Browser](results/frontier-browser/index.html)
-3. [Submitted Proposal PDF](results/casestudy-{5558806}.pdf)
+1. [Group Repro Sync Guide](results/GROUP_REPRO_SYNC_GUIDE_CN.md)
+2. [Final Demo Guide](results/FINAL_DEMO_GUIDE_CN.md)
+3. [Frontier Browser](results/frontier-browser/index.html)
+4. [Submitted Proposal PDF](results/casestudy-{5558806}.pdf)
 
 ### `ref/`
 Lecture materials and reference PDFs used during topic selection and method design.
