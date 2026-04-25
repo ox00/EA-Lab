@@ -886,6 +886,113 @@ function drawActor(ctx, actor, cameraX) {
   ctx.fillRect(x + actor.width * 0.12, y + actor.height * 0.04, actor.width * 0.76, actor.height * 0.16);
 }
 
+function physicsActionLabel(actionLabel) {
+  if (actionLabel === "RR") return "Run Long";
+  if (actionLabel === "RJ") return "Run + Jump";
+  if (actionLabel === "R") return "Run";
+  if (actionLabel === "J") return "Jump";
+  if (actionLabel === "N") return "Neutral";
+  return "Idle";
+}
+
+function previewHudLines() {
+  const map = state.preview.map;
+  if (!map) {
+    return [];
+  }
+
+  if (state.preview.mode === "physics") {
+    const total = state.preview.physicsPlan.length;
+    const stepIndex = Math.min(state.preview.physicsPlanIndex, Math.max(0, total - 1));
+    const currentAction =
+      total === 0
+        ? "Unavailable"
+        : state.preview.physicsPlanIndex >= total
+          ? "Goal Reached"
+          : physicsActionLabel(state.preview.physicsPlan[stepIndex]);
+    const frameLimit =
+      state.preview.physicsPlanIndex >= total || total === 0
+        ? 0
+        : physicsActionFrameLimit(state.preview.physicsPlan[stepIndex]);
+    const actionProgress =
+      frameLimit > 0
+        ? `${Math.min(state.preview.physicsActionFrame + 1, frameLimit)}/${frameLimit}`
+        : "-";
+    const overallProgress =
+      total > 0
+        ? `${Math.min(state.preview.physicsPlanIndex + (frameLimit > 0 ? state.preview.physicsActionFrame / frameLimit : 0), total).toFixed(1)}/${total}`
+        : "0/0";
+    const percent =
+      total > 0
+        ? `${((Math.min(state.preview.physicsPlanIndex + (frameLimit > 0 ? state.preview.physicsActionFrame / frameLimit : 0), total) / total) * 100).toFixed(1)}%`
+        : "0.0%";
+    return [
+      "Lite Physics Replay",
+      `Action: ${currentAction}`,
+      `Action Progress: ${actionProgress}`,
+      `Plan Progress: ${overallProgress} (${percent})`,
+    ];
+  }
+
+  if (state.preview.mode === "replay") {
+    const total = state.preview.replayPath.length;
+    const step = Math.min(state.preview.replayStepIndex + 1, total);
+    const percent = total > 0 ? `${((step / total) * 100).toFixed(1)}%` : "0.0%";
+    return [
+      "Reachability Replay",
+      "Mode: Constraint-Level Path",
+      `Node Progress: ${step}/${total}`,
+      `Coverage: ${percent}`,
+    ];
+  }
+
+  if (state.preview.mode === "playable") {
+    const actorX = state.preview.actor ? state.preview.actor.x.toFixed(1) : "0.0";
+    return [
+      "Playable Lite",
+      "Mode: Manual Control",
+      `Actor X: ${actorX}px`,
+      "Keys: A/D/W or Arrows/Space",
+    ];
+  }
+
+  const maxCamera = Math.max(0, map[0].length * state.preview.tileSize - state.preview.viewportWidth);
+  const percent = maxCamera > 0 ? `${((state.preview.cameraX / maxCamera) * 100).toFixed(1)}%` : "0.0%";
+  return [
+    "Auto-Scroll",
+    "Mode: Fast Browse",
+    `Camera X: ${state.preview.cameraX.toFixed(1)}px`,
+    `Sweep: ${percent}`,
+  ];
+}
+
+function drawPreviewHud(ctx, canvas) {
+  const lines = previewHudLines();
+  if (!lines.length) {
+    return;
+  }
+
+  const panelX = 16;
+  const panelY = 14;
+  const lineHeight = 18;
+  const panelWidth = 280;
+  const panelHeight = 18 + lines.length * lineHeight;
+
+  ctx.fillStyle = "rgba(27, 31, 28, 0.72)";
+  ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+  ctx.strokeStyle = "rgba(255, 250, 241, 0.22)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(panelX + 0.5, panelY + 0.5, panelWidth - 1, panelHeight - 1);
+
+  ctx.fillStyle = "#fffaf1";
+  ctx.font = '13px "IBM Plex Sans", "Avenir Next", sans-serif';
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  lines.forEach((line, index) => {
+    ctx.fillText(line, panelX + 12, panelY + 10 + index * lineHeight);
+  });
+}
+
 function drawPreview() {
   const canvas = document.getElementById("preview-canvas");
   const ctx = canvas.getContext("2d");
@@ -916,6 +1023,8 @@ function drawPreview() {
     const markerY = canvas.height - tileSize * 2.9;
     drawActor(ctx, { x: markerX + state.preview.cameraX, y: markerY, width: tileSize * 0.72, height: tileSize * 0.9 }, state.preview.cameraX);
   }
+
+  drawPreviewHud(ctx, canvas);
 }
 
 function animationStep(timestamp) {
