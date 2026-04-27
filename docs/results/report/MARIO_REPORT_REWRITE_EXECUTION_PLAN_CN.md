@@ -1,7 +1,7 @@
 # Mario Report 重写执行稿（结合当前项目真实重心）
 
 ## 1. 这份文档的目的
-这份文档比 `MARIO_REPORT_REVISION_GUIDE_CN.md` 更进一步。
+这份文档的作用是把报告重写思路整理成可执行版本。
 
 它不是只有 review 建议，而是把后续 report 修改拆成可以直接执行的改法。
 
@@ -296,8 +296,8 @@
 2. `docs/results/report/Mario_extracted_for_edit.docx`
 
 ### 你可以直接用于指导改稿的文档
-1. `docs/results/report/MARIO_REPORT_REVISION_GUIDE_CN.md`
-2. `docs/results/report/MARIO_REPORT_REWRITE_EXECUTION_PLAN_CN.md`
+1. `docs/results/report/MARIO_REPORT_REWRITE_EXECUTION_PLAN_CN.md`
+2. `docs/results/report/MARIO_REPORT_SECTION_BY_SECTION_GUIDE_CN.md`
 
 ## 14. 最后判断
 你现在的判断是对的：

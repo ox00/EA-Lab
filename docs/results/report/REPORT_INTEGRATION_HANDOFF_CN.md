@@ -1,6 +1,6 @@
 # 报告集成说明（给负责整合报告的同学）
 
-这份说明的目的不是重复写一遍 report，而是帮助你快速理解：我们这轮到底改了什么，为什么这么改，以及你整合报告时应该优先吸收哪些内容。
+这份说明的目的不是重复写一遍 report，而是帮助快速理解：我们这轮到底改了什么，为什么这么改，以及你整合报告时应该优先吸收哪些内容。
 
 ## 1. 先看哪里
 如果你要快速接手报告，请按这个顺序看：
@@ -14,21 +14,19 @@
 最关键的一份是第 1 个文件。它已经尽量压成可直接贴回 Word/LaTeX 的正文版本。
 
 ## 2. 这轮修改的核心方向
-旧报告不是完全不能用，而是叙事重心偏了。
 
 旧稿更像：
 - `VGLC -> LSTM -> AI seeds -> NSGA-II refinement`
 
 新稿改成：
 - `explicit genotype -> deterministic decode -> hard constraints -> NSGA-II multi-objective search -> browser/replay evidence`
-- `AI-seeded initialization` 保留，但放回“真实接入的上游增强模块”这个位置
+- `AI-seeded initialization` 保留，在“真实接入的上游增强模块”这个位置
 
 一句话总结：
-`我们没有弱化 AI，而是把它从“看起来像整篇论文唯一主角”调整成“项目主系统中的一个真实集成模块”。`
+`我们没有弱化 AI，而是把它调整成AI seeded+EA NSGA-II multi-objective search平衡。`
 
 ## 3. 为什么要这么改
-因为从当前项目真实成果看，最扎实、最能自洽、也最容易被老师认可的部分其实是：
-
+增强：
 1. 有显式基因型表示
 2. 有确定性的 genotype -> decode 链路
 3. 有 hard feasibility constraints
@@ -36,7 +34,7 @@
 5. 有 semantic objectives 的逐步扩展
 6. 有 frontier browser + replay 作为最终展示证据层
 
-如果还把标题和摘要写得像“主要在做 LSTM 初始化”，会掩盖项目真正成熟的部分。
+需要平衡 “LSTM 初始化”+"EA op（也是课程重点）”。
 
 ## 4. 这轮新增或补强了哪些关键点
 ### 4.1 标题重排
@@ -57,7 +55,7 @@
 4. 实验结论
 5. 最终展示层
 
-旧摘要的问题不是句子错，而是读完后会让人觉得：
+旧摘要容易会让人觉得：
 `这是一篇 LSTM 初始化 + NSGA-II 修补的报告`
 
 新摘要要让人读出：
@@ -91,7 +89,7 @@ Introduction 已经不再从“以前都 random init，所以我们做 data-driv
 另外还明确强调：
 `feasibility is a hard gate`
 
-这点很关键，因为它直接决定了你们的报告是不是一个像样的 constrained optimization project。
+这点很关键，因为它直接决定了报告是不是一个像样的 constrained optimization project。
 
 ### 4.5 Method 重组
 Method 结构已经改得更清晰：
@@ -127,8 +125,6 @@ Method 结构已经改得更清晰：
 2. AI-seeded vs random
 3. objective progression
 
-这样会让 AI line 占据过高叙事权重。
-
 ### 新稿改法
 新稿把实验逻辑整理成：
 1. core pipeline validation
@@ -147,7 +143,6 @@ Method 结构已经改得更清晰：
 这个顺序更符合真实的方法论推导。
 
 ## 6. 这轮保留 AI，但不“神化 AI”
-这一点请你整合报告时特别注意。
 
 我们没有把 AI 写弱，也没有否定同学的上游工作。
 相反，我们明确保留了三件事：
@@ -162,7 +157,7 @@ Method 结构已经改得更清晰：
 而是：
 `AI is already integrated, but its usefulness currently depends on upstream data quality and repair.`
 
-这既真实，也能保护团队协作氛围。
+这既真实，也能展示协作成功。
 
 ## 7. 最终展示层已经被正式升格
 旧稿里 browser / replay 有写到，但不够像正式成果。
@@ -189,7 +184,7 @@ Method 结构已经改得更清晰：
 两者一起放最完整。
 
 ## 9. 你整合时建议直接采用哪些文件
-### 最推荐直接吸收
+### 最推荐直接吸收 
 - [MARIO_REPORT_PASTE_READY_EN.md](MARIO_REPORT_PASTE_READY_EN.md)
 
 ### 如果需要看完整推导和更多可裁剪文本
