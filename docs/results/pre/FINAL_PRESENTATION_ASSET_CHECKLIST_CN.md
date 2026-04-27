@@ -106,8 +106,8 @@ PPT 中不建议贴整段动作，只建议摘取：
 
 ## 4. 现场演示建议打开的文件
 1. `docs/results/frontier-browser/index.html`
-2. `docs/results/FINAL_DEMO_GUIDE_CN.md`
-3. `docs/results/LITE_PHYSICS_REPLAY_TALKING_POINTS_CN.md`
+2. `docs/results/pre/FINAL_DEMO_GUIDE_CN.md`
+3. `docs/results/pre/LITE_PHYSICS_REPLAY_TALKING_POINTS_CN.md`
 4. `docs/results/frontier-browser/lite_physics_plans.txt`
 
 ## 5. 备用材料

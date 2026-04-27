@@ -30,7 +30,7 @@
 
 ### Step 1. 先看最终演示说明
 文件：
-- `docs/results/FINAL_DEMO_GUIDE_CN.md`
+- `docs/results/pre/FINAL_DEMO_GUIDE_CN.md`
 
 作用：
 - 快速知道项目想怎么讲
@@ -99,7 +99,7 @@
 最重要的展示入口只有两个：
 
 1. `docs/results/frontier-browser/index.html`
-2. `docs/results/FINAL_DEMO_GUIDE_CN.md`
+2. `docs/results/pre/FINAL_DEMO_GUIDE_CN.md`
 
 浏览器页面里当前已经包括：
 
@@ -218,10 +218,10 @@ python3 scripts/build-frontier-browser-data.py
 ## 10. 当前最值得重点阅读的文件
 如果时间有限，优先看下面这些：
 
-1. `docs/results/FINAL_DEMO_GUIDE_CN.md`
+1. `docs/results/pre/FINAL_DEMO_GUIDE_CN.md`
 2. `docs/results/frontier-browser/index.html`
-3. `docs/results/PPT_OUTLINE_CN.md`
-4. `docs/results/LITE_PHYSICS_REPLAY_TALKING_POINTS_CN.md`
+3. `docs/results/pre/PPT_OUTLINE_CN.md`
+4. `docs/results/pre/LITE_PHYSICS_REPLAY_TALKING_POINTS_CN.md`
 5. `docs/analysis/A8/analysis.md`
 6. `docs/analysis/A8/MARIO_PCG_PIPELINE_DIAGRAM.md`
 

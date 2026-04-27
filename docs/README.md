@@ -7,7 +7,7 @@ This directory stores the formal project documents for `EA-Lab`.
 If you want to understand the current Mario PCG project quickly, read in this order:
 
 1. [Group Repro Sync Guide](results/GROUP_REPRO_SYNC_GUIDE_CN.md)
-2. [Final Demo Guide](results/FINAL_DEMO_GUIDE_CN.md)
+2. [Final Demo Guide](results/pre/FINAL_DEMO_GUIDE_CN.md)
 3. [A8 Analysis Index](analysis/A8/analysis.md)
 4. [Mario Pipeline Diagram](analysis/A8/MARIO_PCG_PIPELINE_DIAGRAM.md)
 5. [Mario EA Interface EN](analysis/A8/MARIO_EA_INTERFACE_EN.md)
@@ -36,9 +36,10 @@ Project outputs and milestone-facing materials.
 
 Recommended entry points:
 1. [Group Repro Sync Guide](results/GROUP_REPRO_SYNC_GUIDE_CN.md)
-2. [Final Demo Guide](results/FINAL_DEMO_GUIDE_CN.md)
-3. [Frontier Browser](results/frontier-browser/index.html)
-4. [Submitted Proposal PDF](results/casestudy-{5558806}.pdf)
+2. [Pre / PPT Folder](results/pre/)
+3. [Report Folder](results/report/)
+4. [Frontier Browser](results/frontier-browser/index.html)
+5. [Submitted Proposal PDF](results/casestudy-{5558806}.pdf)
 
 ### `ref/`
 Lecture materials and reference PDFs used during topic selection and method design.
@@ -63,6 +64,8 @@ Useful archive entry points:
 3. `analysis/` is for active project documents
 4. `archive/` is for retired or historical materials
 5. `results/` is for demo-facing or submission-facing artifacts
+6. `results/report/` is the working folder for report drafts, revision notes, extracted text, and report figures
+7. `results/pre/` is the working folder for presentation, pre-demo, and PPT-facing materials
 
 ## Project Scope Note
 
