@@ -58,6 +58,11 @@ python -m ea_lab.pcg.demo --algorithm nsga2 --nsga2-objective-mode core_3obj --g
 - `--nsga2-objective-mode`: `core_3obj`, `family_4obj`, `curve_4obj`, or `semantic_5obj`.
 - `--output-dir`: Where to save the results (default: `output/pcg/mvp`).
 
+### AI-Seeded Assets
+- The `ai_seeded` mode expects the processed chromosome data at `data/processed/vglc_chromosomes_approx.json`.
+- The pre-trained LSTM checkpoint is stored at `models/lstm_generator.pt`.
+- If the LSTM checkpoint is unavailable at runtime, the pipeline falls back to sampling from the processed chromosome distribution. The processed data file is still required for seeded initialization.
+
 ---
 
 ## 📊 Result Interpretation

@@ -1,5 +1,11 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+
+REPORT_DIR = Path("docs/results/report")
+REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Figure 1: Frequency bar chart
 ids = [0, 1, 2, 3, 9, 13, 15]
@@ -12,7 +18,7 @@ plt.title("Segment ID Distribution from VGLC (Real Mario Levels)")
 for i, v in zip(ids, freqs):
     plt.text(i, v + 3, str(v), ha='center')
 plt.tight_layout()
-plt.savefig("docs/results/fig_segment_frequency.png", dpi=150)
+plt.savefig(REPORT_DIR / "fig_segment_frequency.png", dpi=150)
 print("Saved fig_segment_frequency.png")
 
 # Figure 2: LSTM training curve
@@ -37,5 +43,5 @@ plt.ylabel("Cross-Entropy Loss")
 plt.title("LSTM Training Convergence on Mario Segment Sequences")
 plt.legend()
 plt.tight_layout()
-plt.savefig("docs/results/fig_lstm_curve.png", dpi=150)
+plt.savefig(REPORT_DIR / "fig_lstm_curve.png", dpi=150)
 print("Saved fig_lstm_curve.png")

@@ -22,7 +22,7 @@ def load_json(path: Path):
 
 
 def plot_baseline_compare() -> None:
-    rows = load_json(ROOT / "output" / "pcg" / "baseline_compare" / "compare_summary.json")
+    rows = load_json(ROOT / "output" / "pcg" / "baseline_compare_v3" / "compare_summary.json")
     algorithms = [row["algorithm"] for row in rows]
     difficulty = [row["avg_best_difficulty_error"] for row in rows]
     diversity = [row["avg_best_structural_diversity"] for row in rows]
