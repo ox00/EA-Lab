@@ -4,7 +4,7 @@
 
 对照对象：
 - 旧稿底稿：[Mario_extracted_for_edit.md](Mario_extracted_for_edit.md)
-- 近终稿英文正文：[MARIO_REPORT_PASTE_READY_EN.md](MARIO_REPORT_PASTE_READY_EN.md)
+- 近终稿英文正文：[MARIO_REPORT_PASTE_READY_EN-final.md](MARIO_REPORT_PASTE_READY_EN-final.md)
 - 完整修订版草稿：[MARIO_REPORT_FINAL_SUBMISSION_DRAFT_EN.md](MARIO_REPORT_FINAL_SUBMISSION_DRAFT_EN.md)
 
 ## 1. 先说整体变化
@@ -245,7 +245,7 @@ Method 现在分成三层更清晰：
 
 ## 11. 当前可直接拿来用的文件
 ### 如果要直接整合英文正文
-- [MARIO_REPORT_PASTE_READY_EN.md](MARIO_REPORT_PASTE_READY_EN.md)
+- [MARIO_REPORT_PASTE_READY_EN-final.md](MARIO_REPORT_PASTE_READY_EN-final.md)
 
 ### 如果要看更完整的可裁剪版本
 - [MARIO_REPORT_FINAL_SUBMISSION_DRAFT_EN.md](MARIO_REPORT_FINAL_SUBMISSION_DRAFT_EN.md)

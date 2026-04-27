@@ -5,7 +5,7 @@
 ## 1. 先看哪里
 如果你要快速接手报告，请按这个顺序看：
 
-1. [近终稿英文正文](MARIO_REPORT_PASTE_READY_EN.md)
+1. [近终稿英文正文](MARIO_REPORT_PASTE_READY_EN-final.md)
 2. [更完整的英文修订稿](MARIO_REPORT_FINAL_SUBMISSION_DRAFT_EN.md)
 3. [逐节对照修改清单](MARIO_REPORT_SECTION_BY_SECTION_GUIDE_CN.md)
 4. [旧稿抽取底稿](Mario_extracted_for_edit.md)
@@ -185,7 +185,7 @@ Method 结构已经改得更清晰：
 
 ## 9. 你整合时建议直接采用哪些文件
 ### 最推荐直接吸收 
-- [MARIO_REPORT_PASTE_READY_EN.md](MARIO_REPORT_PASTE_READY_EN.md)
+- [MARIO_REPORT_PASTE_READY_EN-final.md](MARIO_REPORT_PASTE_READY_EN-final.md)
 
 ### 如果需要看完整推导和更多可裁剪文本
 - [MARIO_REPORT_FINAL_SUBMISSION_DRAFT_EN.md](MARIO_REPORT_FINAL_SUBMISSION_DRAFT_EN.md)
