@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EA-Lab Mario PCG Demo</title>
+    <meta http-equiv="refresh" content="0; url=./results/frontier-browser/" />
+    <style>
+      :root {
+        --bg: #f3efe6;
+        --paper: #fffaf1;
+        --ink: #1f1f1b;
+        --muted: #625d53;
+        --accent: #1c7c54;
+        --accent-2: #d95d39;
+        --line: #d7cdbb;
+        --shadow: 0 14px 40px rgba(58, 46, 24, 0.08);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 28px;
+        font-family: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+        background: linear-gradient(160deg, #f7f0e2 0%, #efe7d6 100%);
+        color: var(--ink);
+      }
+
+      .card {
+        width: min(760px, 100%);
+        padding: 32px;
+        border-radius: 22px;
+        border: 1px solid rgba(182, 161, 122, 0.28);
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      h1 {
+        margin: 0 0 14px;
+        font-family: Georgia, "Times New Roman", serif;
+        letter-spacing: 0.01em;
+      }
+
+      p {
+        margin: 0 0 14px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 18px;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .button.primary {
+        background: linear-gradient(135deg, #1c7c54 0%, #0f5f45 100%);
+        color: #fffaf1;
+      }
+
+      .button.secondary {
+        border: 1px solid var(--line);
+        color: var(--accent-2);
+        background: #fff8ee;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <p class="eyebrow">EA Lab A8</p>
+      <h1>Mario PCG Demo</h1>
+      <p>
+        This GitHub Pages entry redirects to the final frontier browser used for the Mario PCG course project demo.
+      </p>
+      <p>
+        If the browser does not redirect automatically, use the links below.
+      </p>
+      <div class="actions">
+        <a class="button primary" href="./results/frontier-browser/">Open Frontier Browser</a>
+        <a class="button secondary" href="./results/FINAL_DEMO_GUIDE_CN.md">Open Demo Guide</a>
+      </div>
+    </main>
+  </body>
+</html>

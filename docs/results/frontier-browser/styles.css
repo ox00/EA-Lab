@@ -59,6 +59,17 @@ body {
   line-height: 1.5;
 }
 
+.brand-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.brand-links .subcopy {
+  margin: 0;
+}
+
 .case-list,
 .frontier-list {
   display: grid;
