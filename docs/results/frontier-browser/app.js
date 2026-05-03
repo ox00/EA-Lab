@@ -33,6 +33,8 @@ const state = {
     physicsActionFrame: 0,
     physicsAccumulator: 0,
     physicsPause: 0,
+    renderer: null,
+    renderClock: 0,
   },
 };
 
@@ -871,19 +873,57 @@ function updateAutoplay(dt) {
   }
 }
 
-function drawActor(ctx, actor, cameraX) {
+function drawActor(ctx, actor, cameraX, options = {}) {
+  const velocity = options.velocity ?? actor.vx ?? 0;
+  const phase = options.phase ?? state.preview.renderClock * 10 + actor.x * 0.015;
+  const bob = options.disableBob ? 0 : Math.sin(phase) * Math.min(actor.height * 0.05, 2.5);
+  const runTilt = Math.max(-0.2, Math.min(0.2, velocity / 260));
   const x = actor.x - cameraX;
-  const y = actor.y;
+  const y = actor.y + bob;
+
+  ctx.fillStyle = "rgba(30, 35, 34, 0.16)";
+  ctx.beginPath();
+  ctx.ellipse(x + actor.width * 0.5, y + actor.height * 0.98, actor.width * 0.42, actor.height * 0.12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.save();
+  ctx.translate(x + actor.width * 0.5, y + actor.height * 0.54);
+  ctx.rotate(runTilt * 0.15);
   ctx.fillStyle = "#d84b3d";
-  ctx.fillRect(x + actor.width * 0.18, y + actor.height * 0.24, actor.width * 0.64, actor.height * 0.68);
+  ctx.fillRect(-actor.width * 0.32, -actor.height * 0.3, actor.width * 0.64, actor.height * 0.68);
   ctx.fillStyle = "#1e4da8";
-  ctx.fillRect(x + actor.width * 0.24, y + actor.height * 0.52, actor.width * 0.52, actor.height * 0.4);
+  ctx.fillRect(-actor.width * 0.26, -actor.height * 0.02, actor.width * 0.52, actor.height * 0.4);
+  ctx.restore();
+
+  const legSwing = Math.sin(phase) * actor.width * 0.1;
+  ctx.strokeStyle = "#173a80";
+  ctx.lineWidth = Math.max(2, actor.width * 0.12);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(x + actor.width * 0.44, y + actor.height * 0.78);
+  ctx.lineTo(x + actor.width * 0.34 + legSwing, y + actor.height * 0.98);
+  ctx.moveTo(x + actor.width * 0.58, y + actor.height * 0.78);
+  ctx.lineTo(x + actor.width * 0.68 - legSwing, y + actor.height * 0.98);
+  ctx.stroke();
+
   ctx.fillStyle = "#f5d4b0";
   ctx.beginPath();
   ctx.arc(x + actor.width * 0.5, y + actor.height * 0.22, actor.width * 0.22, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.strokeStyle = "#9b2b24";
+  ctx.lineWidth = Math.max(2, actor.width * 0.08);
+  ctx.beginPath();
+  ctx.moveTo(x + actor.width * 0.38, y + actor.height * 0.46);
+  ctx.lineTo(x + actor.width * 0.28 - legSwing * 0.35, y + actor.height * 0.64);
+  ctx.moveTo(x + actor.width * 0.62, y + actor.height * 0.48);
+  ctx.lineTo(x + actor.width * 0.74 + legSwing * 0.35, y + actor.height * 0.64);
+  ctx.stroke();
+
   ctx.fillStyle = "#c73b30";
   ctx.fillRect(x + actor.width * 0.12, y + actor.height * 0.04, actor.width * 0.76, actor.height * 0.16);
+  ctx.fillStyle = "#f7e9cf";
+  ctx.fillRect(x + actor.width * 0.2, y + actor.height * 0.09, actor.width * 0.16, actor.height * 0.035);
 }
 
 function physicsActionLabel(actionLabel) {
@@ -993,16 +1033,339 @@ function drawPreviewHud(ctx, canvas) {
   });
 }
 
-function drawPreview() {
-  const canvas = document.getElementById("preview-canvas");
+function createShader(gl, type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    const message = gl.getShaderInfoLog(shader);
+    gl.deleteShader(shader);
+    throw new Error(`WebGL shader compile failed: ${message}`);
+  }
+  return shader;
+}
+
+function createProgram(gl, vertexSource, fragmentSource) {
+  const program = gl.createProgram();
+  gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, vertexSource));
+  gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, fragmentSource));
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    const message = gl.getProgramInfoLog(program);
+    gl.deleteProgram(program);
+    throw new Error(`WebGL program link failed: ${message}`);
+  }
+  return program;
+}
+
+function createTextureFromCanvas(gl, canvas, options = {}) {
+  const pixelated = options.pixelated !== false;
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, pixelated ? gl.NEAREST : gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, pixelated ? gl.NEAREST : gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+  return texture;
+}
+
+function buildPreviewSpriteAtlas(tileSize) {
+  const spriteKeys = ["#", "B", "?", "o", "E", "P", "S", "G", "ACTOR"];
+  const cols = 3;
+  const rows = Math.ceil(spriteKeys.length / cols);
+  const atlas = document.createElement("canvas");
+  atlas.width = cols * tileSize;
+  atlas.height = rows * tileSize;
+  const ctx = atlas.getContext("2d");
+  const lookup = {};
+
+  spriteKeys.forEach((key, index) => {
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    const x = col * tileSize;
+    const y = row * tileSize;
+    ctx.clearRect(x, y, tileSize, tileSize);
+    ctx.save();
+    ctx.translate(x, y);
+    if (key === "ACTOR") {
+      drawActor(
+        ctx,
+        {
+          x: 0,
+          y: 0,
+          width: tileSize * 0.72,
+          height: tileSize * 0.9,
+        },
+        0,
+      );
+    } else {
+      drawTile(ctx, key, 0, 0, tileSize);
+    }
+    ctx.restore();
+    lookup[key] = {
+      u0: x / atlas.width,
+      v0: y / atlas.height,
+      u1: (x + tileSize) / atlas.width,
+      v1: (y + tileSize) / atlas.height,
+    };
+  });
+
+  return { atlas, lookup };
+}
+
+function buildPreviewBackgroundTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
   const ctx = canvas.getContext("2d");
-  const map = state.preview.map;
-  if (!map) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    return;
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, "#8cd4ff");
+  gradient.addColorStop(0.68, "#dbf3ff");
+  gradient.addColorStop(0.68, "#f0ddb7");
+  gradient.addColorStop(1, "#e9ca8e");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < 18; i += 1) {
+    const x = (i * 47) % canvas.width;
+    const y = 20 + ((i * 23) % 96);
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
+    ctx.beginPath();
+    ctx.arc(x, y, 10 + (i % 3) * 4, 0, Math.PI * 2);
+    ctx.arc(x + 12, y + 4, 8 + (i % 2) * 4, 0, Math.PI * 2);
+    ctx.arc(x + 22, y, 10, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  return canvas;
+}
+
+function buildPreviewCloudTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 320;
+  const ctx = canvas.getContext("2d");
+  const clouds = [
+    [90, 64, 48],
+    [280, 92, 54],
+    [520, 56, 44],
+    [760, 84, 58],
+    [920, 48, 36],
+  ];
+  clouds.forEach(([x, y, radius]) => {
+    ctx.fillStyle = "rgba(255,255,255,0.78)";
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.arc(x + radius * 0.8, y + 10, radius * 0.8, 0, Math.PI * 2);
+    ctx.arc(x + radius * 1.5, y - 6, radius * 0.72, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  return canvas;
+}
+
+function buildPreviewHillTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 320;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "rgba(96, 159, 110, 0.42)";
+  ctx.beginPath();
+  ctx.moveTo(0, 250);
+  ctx.bezierCurveTo(80, 170, 180, 180, 280, 250);
+  ctx.bezierCurveTo(360, 190, 470, 175, 560, 250);
+  ctx.bezierCurveTo(660, 165, 785, 170, 910, 250);
+  ctx.lineTo(1024, 320);
+  ctx.lineTo(0, 320);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(54, 118, 69, 0.62)";
+  ctx.beginPath();
+  ctx.moveTo(0, 285);
+  ctx.bezierCurveTo(110, 220, 210, 215, 320, 286);
+  ctx.bezierCurveTo(420, 226, 530, 230, 670, 288);
+  ctx.bezierCurveTo(780, 230, 905, 225, 1024, 292);
+  ctx.lineTo(1024, 320);
+  ctx.lineTo(0, 320);
+  ctx.closePath();
+  ctx.fill();
+  return canvas;
+}
+
+function pushTexturedQuad(vertices, x, y, width, height, uv) {
+  vertices.push(
+    x, y, uv.u0, uv.v0,
+    x + width, y, uv.u1, uv.v0,
+    x, y + height, uv.u0, uv.v1,
+    x, y + height, uv.u0, uv.v1,
+    x + width, y, uv.u1, uv.v0,
+    x + width, y + height, uv.u1, uv.v1,
+  );
+}
+
+function pushParallaxTexture(vertices, x, width, height) {
+  pushTexturedQuad(vertices, x, 0, width, height, { u0: 0, v0: 0, u1: 1, v1: 1 });
+  if (x > 0) {
+    pushTexturedQuad(vertices, x - width, 0, width, height, { u0: 0, v0: 0, u1: 1, v1: 1 });
+  } else {
+    pushTexturedQuad(vertices, x + width, 0, width, height, { u0: 0, v0: 0, u1: 1, v1: 1 });
+  }
+}
+
+function initPreviewRenderer() {
+  const sceneCanvas = document.getElementById("preview-canvas");
+  const overlayCanvas = document.getElementById("preview-overlay");
+  if (!sceneCanvas || !overlayCanvas) {
+    return null;
   }
 
-  drawSky(ctx, canvas.width, canvas.height);
+  const vertexSource = `
+    attribute vec2 a_position;
+    attribute vec2 a_texCoord;
+    uniform vec2 u_resolution;
+    varying vec2 v_texCoord;
+    void main() {
+      vec2 zeroToOne = a_position / u_resolution;
+      vec2 clipSpace = zeroToOne * 2.0 - 1.0;
+      gl_Position = vec4(clipSpace * vec2(1.0, -1.0), 0.0, 1.0);
+      v_texCoord = a_texCoord;
+    }
+  `;
+  const fragmentSource = `
+    precision mediump float;
+    varying vec2 v_texCoord;
+    uniform sampler2D u_texture;
+    void main() {
+      gl_FragColor = texture2D(u_texture, v_texCoord);
+    }
+  `;
+
+  try {
+    const gl = sceneCanvas.getContext("webgl", {
+      alpha: false,
+      antialias: true,
+      premultipliedAlpha: true,
+    });
+    if (!gl) {
+      return {
+        mode: "2d",
+        sceneCanvas,
+        overlayCanvas,
+        overlayCtx: overlayCanvas.getContext("2d"),
+      };
+    }
+
+    const program = createProgram(gl, vertexSource, fragmentSource);
+    const positionLocation = gl.getAttribLocation(program, "a_position");
+    const texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
+    const resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+    const textureLocation = gl.getUniformLocation(program, "u_texture");
+    const buffer = gl.createBuffer();
+    const { atlas, lookup } = buildPreviewSpriteAtlas(state.preview.tileSize);
+    const atlasTexture = createTextureFromCanvas(gl, atlas);
+    const backgroundTexture = createTextureFromCanvas(gl, buildPreviewBackgroundTexture(), { pixelated: false });
+    const cloudTexture = createTextureFromCanvas(gl, buildPreviewCloudTexture(), { pixelated: false });
+    const hillTexture = createTextureFromCanvas(gl, buildPreviewHillTexture(), { pixelated: false });
+    const actorCanvas = document.createElement("canvas");
+    actorCanvas.width = 64;
+    actorCanvas.height = 64;
+    const actorTexture = createTextureFromCanvas(gl, actorCanvas);
+
+    gl.useProgram(program);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 16, 0);
+    gl.enableVertexAttribArray(texCoordLocation);
+    gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 16, 8);
+    gl.uniform2f(resolutionLocation, sceneCanvas.width, sceneCanvas.height);
+    gl.uniform1i(textureLocation, 0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    return {
+      mode: "webgl",
+      sceneCanvas,
+      overlayCanvas,
+      overlayCtx: overlayCanvas.getContext("2d"),
+      gl,
+      program,
+      buffer,
+      positionLocation,
+      texCoordLocation,
+      resolutionLocation,
+      textureLocation,
+      atlasTexture,
+      backgroundTexture,
+      cloudTexture,
+      hillTexture,
+      actorCanvas,
+      actorTexture,
+      spriteLookup: lookup,
+    };
+  } catch (error) {
+    console.warn("Preview WebGL initialization failed, falling back to 2D canvas.", error);
+    return {
+      mode: "2d",
+      sceneCanvas,
+      overlayCanvas,
+      overlayCtx: overlayCanvas.getContext("2d"),
+    };
+  }
+}
+
+function ensurePreviewRenderer() {
+  if (!state.preview.renderer) {
+    state.preview.renderer = initPreviewRenderer();
+  }
+  return state.preview.renderer;
+}
+
+function drawParallaxBackground2d(ctx, width, height) {
+  drawSky(ctx, width, height);
+  const clock = state.preview.renderClock;
+  const camera = state.preview.cameraX;
+
+  ctx.save();
+  ctx.globalAlpha = 0.75;
+  const cloudShift = -((camera * 0.18 + clock * 12) % (width + 180));
+  for (let i = 0; i < 4; i += 1) {
+    const x = cloudShift + i * 300;
+    const y = 48 + (i % 2) * 24;
+    ctx.fillStyle = "rgba(255,255,255,0.72)";
+    ctx.beginPath();
+    ctx.arc(x, y, 22, 0, Math.PI * 2);
+    ctx.arc(x + 20, y + 6, 18, 0, Math.PI * 2);
+    ctx.arc(x + 40, y, 22, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  const farShift = -((camera * 0.12) % (width + 240));
+  ctx.fillStyle = "rgba(114, 179, 122, 0.42)";
+  for (let i = -1; i < 3; i += 1) {
+    const x = farShift + i * 420;
+    ctx.beginPath();
+    ctx.moveTo(x, height);
+    ctx.quadraticCurveTo(x + 120, height - 95, x + 240, height);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  const nearShift = -((camera * 0.28) % (width + 240));
+  ctx.fillStyle = "rgba(56, 122, 73, 0.54)";
+  for (let i = -1; i < 3; i += 1) {
+    const x = nearShift + i * 360;
+    ctx.beginPath();
+    ctx.moveTo(x, height);
+    ctx.quadraticCurveTo(x + 90, height - 72, x + 180, height);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawPreviewScene2d(ctx, canvas, map) {
+  drawParallaxBackground2d(ctx, canvas.width, canvas.height);
 
   const tileSize = state.preview.tileSize;
   const startCol = Math.max(0, Math.floor(state.preview.cameraX / tileSize));
@@ -1023,8 +1386,137 @@ function drawPreview() {
     const markerY = canvas.height - tileSize * 2.9;
     drawActor(ctx, { x: markerX + state.preview.cameraX, y: markerY, width: tileSize * 0.72, height: tileSize * 0.9 }, state.preview.cameraX);
   }
+}
 
-  drawPreviewHud(ctx, canvas);
+function updateActorTexture(renderer, actor) {
+  const ctx = renderer.actorCanvas.getContext("2d");
+  const canvas = renderer.actorCanvas;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawActor(
+    ctx,
+    {
+      x: 8,
+      y: 4,
+      width: 46,
+      height: 56,
+      vx: actor?.vx ?? 0,
+    },
+    0,
+    {
+      phase: state.preview.renderClock * 10 + (actor?.x ?? 0) * 0.02,
+      velocity: actor?.vx ?? 0,
+      disableBob: true,
+    },
+  );
+  const { gl } = renderer;
+  gl.bindTexture(gl.TEXTURE_2D, renderer.actorTexture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+}
+
+function drawWebglBatch(renderer, texture, vertices) {
+  if (!vertices.length) {
+    return;
+  }
+  const { gl, buffer } = renderer;
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+  gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 4);
+}
+
+function drawPreviewSceneWebgl(renderer, map) {
+  const { gl, sceneCanvas, spriteLookup, atlasTexture, backgroundTexture, cloudTexture, hillTexture } = renderer;
+  const tileSize = state.preview.tileSize;
+  const startCol = Math.max(0, Math.floor(state.preview.cameraX / tileSize));
+  const endCol = Math.min(map[0].length, startCol + Math.ceil(sceneCanvas.width / tileSize) + 2);
+
+  gl.viewport(0, 0, sceneCanvas.width, sceneCanvas.height);
+  gl.clearColor(0.54, 0.83, 1.0, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(renderer.program);
+  gl.uniform2f(renderer.resolutionLocation, sceneCanvas.width, sceneCanvas.height);
+
+  const bgVertices = [];
+  pushTexturedQuad(bgVertices, 0, 0, sceneCanvas.width, sceneCanvas.height, { u0: 0, v0: 0, u1: 1, v1: 1 });
+  drawWebglBatch(renderer, backgroundTexture, bgVertices);
+
+  const cloudVertices = [];
+  const cloudOffset = -((state.preview.cameraX * 0.18 + state.preview.renderClock * 12) % 1024);
+  pushParallaxTexture(cloudVertices, cloudOffset, 1024, sceneCanvas.height);
+  drawWebglBatch(renderer, cloudTexture, cloudVertices);
+
+  const hillVertices = [];
+  const hillOffset = -((state.preview.cameraX * 0.22) % 1024);
+  pushParallaxTexture(hillVertices, hillOffset, 1024, sceneCanvas.height);
+  drawWebglBatch(renderer, hillTexture, hillVertices);
+
+  const tileVertices = [];
+  for (let row = 0; row < map.length; row += 1) {
+    for (let col = startCol; col < endCol; col += 1) {
+      const tile = map[row][col];
+      if (tile === "." || !spriteLookup[tile]) {
+        continue;
+      }
+      const x = col * tileSize - state.preview.cameraX;
+      const y = row * tileSize;
+      pushTexturedQuad(tileVertices, x, y, tileSize, tileSize, spriteLookup[tile]);
+    }
+  }
+  drawWebglBatch(renderer, atlasTexture, tileVertices);
+
+  const actorVertices = [];
+  if ((state.preview.mode === "playable" || state.preview.mode === "replay" || state.preview.mode === "physics") && state.preview.actor) {
+    updateActorTexture(renderer, state.preview.actor);
+    pushTexturedQuad(
+      actorVertices,
+      state.preview.actor.x - state.preview.cameraX,
+      state.preview.actor.y,
+      state.preview.actor.width,
+      state.preview.actor.height,
+      { u0: 0, v0: 0, u1: 1, v1: 1 },
+    );
+  } else {
+    const markerX = 80;
+    const markerY = sceneCanvas.height - tileSize * 2.9;
+    updateActorTexture(renderer, { x: markerX + state.preview.cameraX, y: markerY, width: tileSize * 0.72, height: tileSize * 0.9, vx: state.preview.autoplaySpeed * 40 });
+    pushTexturedQuad(actorVertices, markerX, markerY, tileSize * 0.72, tileSize * 0.9, { u0: 0, v0: 0, u1: 1, v1: 1 });
+  }
+  drawWebglBatch(renderer, renderer.actorTexture, actorVertices);
+}
+
+function drawPreview() {
+  const renderer = ensurePreviewRenderer();
+  const canvas = renderer?.sceneCanvas || document.getElementById("preview-canvas");
+  const overlayCanvas = renderer?.overlayCanvas || document.getElementById("preview-overlay");
+  const overlayCtx = renderer?.overlayCtx || overlayCanvas?.getContext("2d");
+  const map = state.preview.map;
+  if (!map) {
+    if (renderer?.mode === "2d") {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    } else if (renderer?.gl) {
+      renderer.gl.viewport(0, 0, canvas.width, canvas.height);
+      renderer.gl.clearColor(0, 0, 0, 0);
+      renderer.gl.clear(renderer.gl.COLOR_BUFFER_BIT);
+    }
+    if (overlayCtx) {
+      overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    }
+    return;
+  }
+
+  if (renderer?.mode === "webgl") {
+    drawPreviewSceneWebgl(renderer, map);
+  } else {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawPreviewScene2d(ctx, canvas, map);
+  }
+
+  if (overlayCtx) {
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    drawPreviewHud(overlayCtx, overlayCanvas);
+  }
 }
 
 function animationStep(timestamp) {
@@ -1033,6 +1525,7 @@ function animationStep(timestamp) {
   }
   const dt = Math.min(0.033, (timestamp - state.preview.lastTimestamp) / 1000);
   state.preview.lastTimestamp = timestamp;
+  state.preview.renderClock += dt;
 
   if (state.preview.mode === "playable") {
     updatePlayable(dt);
